@@ -30,3 +30,5 @@ if (NOT WIN32 AND NOT APPLE)
    target_link_libraries(testVHACD rt)
 endif()
 
+install(TARGETS testVHACD DESTINATION bin)
+

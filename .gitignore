@@ -1,6 +1,7 @@
 data/
 data2/
 build/
+install/
 /DebugView/compiler/vc14win64/.vs/ConvexDecomposition/v14
 /DebugView/ConvexDecomposition.exe.pdb
 /DebugView/ConvexDecomposition.ilk
