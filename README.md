@@ -1,3 +1,7 @@
+This is a fork of the official V-HACD repo. The only modification in this version is the addition of a .csv output file containing information on all the clipping planes used to decompose the object.
+
+Orginal readme follows:
+
 # The V-HACD library decomposes a 3D surface into a set of "near" convex parts.
 
 ![Approximate convex decomposition of "Camel"](https://github.com/kmammou/v-hacd/raw/master/doc/acd.png)
