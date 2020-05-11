@@ -28,6 +28,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "vhacdVolume.h"
 #include "vhacdRaycastMesh.h"
 #include <vector>
+#include <fstream>
 
 #define USE_THREAD 1
 #define OCL_MIN_NUM_PRIMITIVES 4096
@@ -52,10 +53,14 @@ public:
         m_oclKernelComputeSum = 0;
 #endif //CL_VERSION_1_1
         Init();
+
+        m_splitPlaneFile.open("splitplanes.csv");
+        m_splitPlaneFile << "# depth, index, treeIndex, a, b, c, d (ax + by + cz + d = 0)" << std::endl;
     }
     //! Destructor.
     ~VHACD(void) 
     {
+      m_splitPlaneFile.close();
     }
     uint32_t GetNConvexHulls() const
     {
@@ -366,6 +371,9 @@ private:
     cl_kernel* m_oclKernelComputeSum;
     size_t m_oclWorkGroupSize;
 #endif //CL_VERSION_1_1
+
+    std::ofstream m_splitPlaneFile;
+    std::vector<int> m_treeIndices;
 };
 }
 #endif // VHACD_VHACD_H

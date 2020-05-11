@@ -1138,6 +1138,20 @@ void VHACD::ComputeACD(const Parameters& params)
                         minConcavity,
                         params);
                 }
+                
+                // Write plane to the split planes output file
+                const int depth = sub - 1;
+                int treeIndex = 1;
+                if (depth > 0) {
+                  const auto firstParentItr = std::find_if(m_treeIndices.begin(), m_treeIndices.end(),
+                    [&](const int& i) { return i >= pow(2, depth - 1); });
+                  treeIndex = *(firstParentItr + p / 2) * 2 + p % 2;
+                }
+                m_treeIndices.push_back(treeIndex);
+                m_splitPlaneFile << depth << "," << p << "," << treeIndex << ",";
+                m_splitPlaneFile << bestPlane.m_a << "," << bestPlane.m_b << "," << bestPlane.m_c << "," << bestPlane.m_d;
+                m_splitPlaneFile << std::endl;
+
                 if (GetCancel()) {
                     delete pset; // clean up
                     break;
