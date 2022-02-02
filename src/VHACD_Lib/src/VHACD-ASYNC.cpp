@@ -131,6 +131,10 @@ public:
 		}
 	}
 
+	virtual void GetSplitPlanes(std::vector<std::string>& sp) const final
+	{
+	}
+
 	void	releaseHACD(void) // release memory associated with the last HACD request
 	{
 		for (uint32_t i=0; i<mHullCount; i++)

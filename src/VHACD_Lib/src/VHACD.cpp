@@ -1148,9 +1148,12 @@ void VHACD::ComputeACD(const Parameters& params)
                   treeIndex = *(firstParentItr + p / 2) * 2 + p % 2;
                 }
                 m_treeIndices.push_back(treeIndex);
-                m_splitPlaneFile << depth << "," << p << "," << treeIndex << ",";
-                m_splitPlaneFile << bestPlane.m_a << "," << bestPlane.m_b << "," << bestPlane.m_c << "," << bestPlane.m_d;
-                m_splitPlaneFile << std::endl;
+				
+				// Store the planes to a vector file
+				std::ostringstream sp;
+				sp << depth << "," << p << "," << treeIndex << ",";
+				sp << bestPlane.m_a << "," << bestPlane.m_b << "," << bestPlane.m_c << "," << bestPlane.m_d;
+				m_splitPlanes.push_back(sp.str());
 
                 if (GetCancel()) {
                     delete pset; // clean up

@@ -100,6 +100,7 @@ struct Parameters {
     string m_fileNameIn;
     string m_fileNameOut;
     string m_fileNameLog;
+	string m_fileNameSp;
     bool m_run;
     IVHACD::Parameters m_paramsVHACD;
     Parameters(void)
@@ -110,6 +111,7 @@ struct Parameters {
         m_fileNameIn = "";
         m_fileNameOut = "output.wrl";
         m_fileNameLog = "log.txt";
+		m_fileNameSp = "splitplanes.csv";
     }
 };
 bool LoadOFF(const string& fileName, vector<float>& points, vector<int>& triangles, IVHACD::IUserLogger& logger);
@@ -187,6 +189,7 @@ int main(int argc, char* argv[])
         msg << "\t OpenCL device ID                            " << params.m_oclDeviceID << endl;
         msg << "\t output                                      " << params.m_fileNameOut << endl;
         msg << "\t log                                         " << params.m_fileNameLog << endl;
+		msg << "\t splitplane                                  " << params.m_fileNameSp  << endl;
         msg << "+ Load mesh" << std::endl;
         myLogger.Log(msg.str().c_str());
 
@@ -255,6 +258,27 @@ int main(int argc, char* argv[])
                     }
                     foutCH.close();
                 }
+				//save splitplanes
+				std::vector<std::string> splitPlanes;
+				interfaceVHACD->GetSplitPlanes(splitPlanes);
+				//create a file to export
+				std::ofstream m_splitPlaneFile;
+				m_splitPlaneFile.open(params.m_fileNameSp);
+				m_splitPlaneFile << "# depth, index, treeIndex, a, b, c, d (ax + by + cz + d = 0)" << std::endl;
+				for (unsigned int p = 0; p < splitPlanes.size(); ++p) {
+					m_splitPlaneFile << splitPlanes.at(p) << endl;
+				}
+				m_splitPlaneFile.close();
+
+				//export the split planes to log file
+				msg.str("");
+				msg << "+ Export SplitPlanes: "<< endl;
+				myLogger.Log(msg.str().c_str());
+				for (unsigned int p = 0; p < splitPlanes.size(); ++p) {
+					msg.str("");
+					msg << splitPlanes.at(p) << endl;
+					myLogger.Log(msg.str().c_str());
+				}
             }
             else {
                 unsigned int nConvexHulls = interfaceVHACD->GetNConvexHulls();
@@ -310,6 +334,7 @@ void Usage(const Parameters& params)
     msg << "       --input                     Wavefront .obj input file name" << endl;
     msg << "       --output                    VRML 2.0 output file name" << endl;
     msg << "       --log                       Log file name" << endl;
+	msg << "       --splitplanefile            SplitPlane file name" << endl;
     msg << "       --resolution                Maximum number of voxels generated during the voxelization stage (default=100,000, range=10,000-16,000,000)" << endl;
     msg << "       --maxhulls                  Maximum number of convex hulls to produce." << endl;
     msg << "       --concavity                 Maximum allowed concavity (default=0.0025, range=0.0-1.0)" << endl;
@@ -352,6 +377,10 @@ void ParseParameters(int argc, char* argv[], Parameters& params)
             if (++i < argc)
                 params.m_fileNameLog = argv[i];
         }
+		else if (!strcmp(argv[i], "--splitplanefile")) {
+			if (++i < argc)
+				params.m_fileNameSp = argv[i];
+		}
         else if (!strcmp(argv[i], "--resolution")) {
             if (++i < argc)
                 params.m_paramsVHACD.m_resolution = atoi(argv[i]);

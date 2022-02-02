@@ -38,6 +38,8 @@
 // If you call 'Compute' while a previous operation was still running, it will automatically cancel the last request
 // and begin a new one.  To cancel a currently running approximation just call 'Cancel'.
 #include <stdint.h>
+#include <vector>
+#include <string>
 
 namespace VHACD {
 class IVHACD {
@@ -123,6 +125,7 @@ public:
         const Parameters& params)
         = 0;
     virtual uint32_t GetNConvexHulls() const = 0;
+	virtual void GetSplitPlanes(std::vector<std::string>& sp) const =0;
     virtual void GetConvexHull(const uint32_t index, ConvexHull& ch) const = 0;
     virtual void Clean(void) = 0; // release internally allocated memory
     virtual void Release(void) = 0; // release IVHACD
