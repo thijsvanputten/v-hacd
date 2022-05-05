@@ -412,6 +412,7 @@ void VHACD::ComputePrimitiveSet(const Parameters& params)
     if (params.m_mode == 0) {
         VoxelSet* vset = new VoxelSet;
         m_volume->Convert(*vset);
+		//m_volume->ExportVoxel(*vset, params.m_fileNameBvx); //Flavien modif to export the voxel
         m_pset = vset;
     }
     else {
@@ -1056,7 +1057,13 @@ void VHACD::ComputeACD(const Parameters& params)
             }
 
             double concavity = ComputeConcavity(volume, volumeCH, m_volumeCH0);
-            double error = 1.01 * pset->ComputeMaxVolumeError() / m_volumeCH0;
+            //double error = 1.01 * pset->ComputeMaxVolumeError() / m_volumeCH0;
+
+			double error = params.m_error * pset->ComputeMaxVolumeError() / m_volumeCH0;
+
+
+			const Vec3<double> minV = pset->GetMinBB();
+			//const Vec3<short> maxV = pset->GetMaxBBVoxels();
 
             if (firstIteration) {
                 firstIteration = false;
@@ -1072,8 +1079,8 @@ void VHACD::ComputeACD(const Parameters& params)
                     << std::endl;
                 params.m_logger->Log(msg.str().c_str());
             }
-
-            if (concavity > params.m_concavity && concavity > error) {
+			//if (concavity > params.m_concavity) {
+			if (concavity > params.m_concavity && concavity > error) {
                 Vec3<double> preferredCuttingDirection;
                 double w = ComputePreferredCuttingDirection(pset, preferredCuttingDirection);
                 planes.Resize(0);

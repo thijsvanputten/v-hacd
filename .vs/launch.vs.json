@@ -1,0 +1,42 @@
+{
+  "version": "0.2.1",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "cppdbg",
+      "name": "D:\\0_DEV\\v-hacd",
+      "project": "",
+      "cwd": "${workspaceRoot}",
+      "program": "${debugInfo.target}",
+      "processId": 0,
+      "MIMode": "gdb",
+      "miDebuggerPath": "${env.MINGW_PREFIX}\\bin\\gdb.exe",
+      "externalConsole": true
+    },
+    {
+      "type": "default",
+      "project": "",
+      "name": "D:\\0_DEV\\v-hacd(1)"
+    },
+    {
+      "type": "default",
+      "project": "src\\CMakeLists.txt",
+      "projectTarget": "testVHACD.exe (test\\testVHACD.exe)",
+      "name": "testVHACD.exe (test\\testVHACD.exe)",
+      "args": [
+        "--input",
+        "D:\\1_DATA\\0_TESTDATA\\COMPS\\7_HOLE\\hole_0.off",
+        "--output",
+        "D:\\1_DATA\\0_TESTDATA\\COMPS\\7_HOLE\\hole_0.wrl",
+        "--binvox",
+        "D:\\1_DATA\\0_TESTDATA\\COMPS\\7_HOLE\\hole_0.binvox",
+        "--resolution",
+        "10000",
+        "--alpha",
+        "0.5",
+        "--error",
+        "0.5"
+      ]
+    }
+  ]
+}

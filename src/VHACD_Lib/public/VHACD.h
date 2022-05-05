@@ -84,6 +84,7 @@ public:
             m_beta = 0.05;
             m_pca = 0;
             m_mode = 0; // 0: voxel-based (recommended), 1: tetrahedron-based
+			m_error = 1.01; //error of volume vs surface
             m_maxNumVerticesPerCH = 64;
             m_minVolumePerCH = 0.0001;
             m_callback = 0;
@@ -92,10 +93,12 @@ public:
             m_oclAcceleration = true;
             m_maxConvexHulls = 1024;
 			m_projectHullVertices = true; // This will project the output convex hull vertices onto the original source mesh to increase the floating point accuracy of the results
+			m_fileNameBvx = "voxel.binvox";
         }
         double m_concavity;
         double m_alpha;
         double m_beta;
+		double m_error;
         double m_minVolumePerCH;
         IUserCallback* m_callback;
         IUserLogger* m_logger;
@@ -109,6 +112,7 @@ public:
         uint32_t m_oclAcceleration;
         uint32_t	m_maxConvexHulls;
 		bool	m_projectHullVertices;
+		std::string m_fileNameBvx;
     };
 
     virtual void Cancel() = 0;

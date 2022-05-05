@@ -1,0 +1,12 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\src",
+    "\\src\\test",
+    "\\src\\test\\src",
+    "\\src\\VHACD_Lib",
+    "\\src\\VHACD_Lib\\src"
+  ],
+  "SelectedNode": "\\src\\VHACD_Lib\\src\\vhacdVolume.cpp",
+  "PreviewInSolutionExplorer": false
+}

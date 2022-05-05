@@ -23,11 +23,16 @@
 #include <float.h>
 #include <math.h>
 #include <queue>
+#include <stdio.h>
 #include <string.h>
+#include <string>
 
 #ifdef _MSC_VER
 #pragma warning(disable:4458 4100)
 #endif
+
+using namespace std;
+using std::endl;
 
 
 namespace VHACD {
@@ -901,6 +906,89 @@ void Volume::Convert(Mesh& mesh, const VOXEL_VALUE value) const
         }
     }
 }
+void Volume::ExportVoxel(VoxelSet& vset, const std::string& binvox_output) const
+{
+	// Open file
+	//string filename_output = "D:\\1_DATA\\0_TESTDATA\\COMPS\\7_HOLE\\hole.binvox";
+
+	fprintf(stdout, "[I/O] Writing data in binvox format to %s \n", binvox_output.c_str());
+
+	//const std::ofstream output(filename_output.c_str(), ios::out | ios::binary);
+	//assert(output);
+
+	std::ofstream output(binvox_output.c_str(), ios::out | ios::binary);
+
+	// Write ASCII header
+	output << "#binvox 1" << endl;
+	output << "dim " << m_dim[0] << " " << m_dim[1] << " " << m_dim[2] << "" << endl;
+	output << "translate " << m_minBB[0] << " " << m_minBB[1] << " " << m_minBB[2] << endl;
+	//output << "scale " << max(max(m_maxBB[0] - m_minBB[0], m_maxBB[1] - m_minBB[1]),
+	//	m_maxBB[2] - m_minBB[2]) << endl;
+	output << "scale " << m_scale << endl;
+	output << "data" << endl;
+
+	// Write BINARY Data (and compress it a bit using run-length encoding)
+	const short i0 = (short)m_dim[0];
+	const short j0 = (short)m_dim[1];
+	const short k0 = (short)m_dim[2];
+	char currentvalue, current_seen;
+	for (short i = 0; i < i0; ++i) {
+		for (short j = 0; j < j0; ++j) {
+			for (short k = 0; k < k0; ++k) {
+				if (i == 0 && j == 0 && k == 0) { // special case: first voxel
+					//currentvalue = checkVoxel(0, 0, 0, v_info.gridsize, vtable);
+					const unsigned char& value = GetVoxel(0, 0, 0);
+					if (value == PRIMITIVE_INSIDE_SURFACE) {
+						currentvalue = true;
+					}
+					else if (value == PRIMITIVE_ON_SURFACE) {
+						currentvalue = true;
+					}
+					else if (value == PRIMITIVE_OUTSIDE_SURFACE) {
+						currentvalue = false;
+					}
+					else {
+						currentvalue = false;
+					}
+					output.write((char*)& currentvalue, 1);
+					current_seen = 1;
+					continue;
+				}
+				//char nextvalue = checkVoxel(x, y, z, v_info.gridsize, vtable);
+				char nextvalue = true;
+				const unsigned char& value = GetVoxel(i, j, k);
+				if (value == PRIMITIVE_INSIDE_SURFACE) {
+					nextvalue = true;
+				}
+				else if (value == PRIMITIVE_ON_SURFACE) {
+					nextvalue = true;
+				}
+				else if (value == PRIMITIVE_OUTSIDE_SURFACE) {
+					nextvalue = false;
+				}
+				else {
+					nextvalue = false;
+				}
+				if (nextvalue != currentvalue || current_seen == (char)255) {
+					output.write((char*)& current_seen, 1);
+					current_seen = 1;
+					currentvalue = nextvalue;
+					output.write((char*)& currentvalue, 1);
+				}
+				else {
+					current_seen++;
+				}
+			}
+		}
+	}
+
+	// Write rest
+	output.write((char*)& current_seen, 1);
+	output.close();
+	fprintf(stdout, "File written \n");
+}
+
+
 void Volume::Convert(VoxelSet& vset) const
 {
     for (int32_t h = 0; h < 3; ++h) {

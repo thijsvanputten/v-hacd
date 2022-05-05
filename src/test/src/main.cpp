@@ -190,6 +190,8 @@ int main(int argc, char* argv[])
         msg << "\t output                                      " << params.m_fileNameOut << endl;
         msg << "\t log                                         " << params.m_fileNameLog << endl;
 		msg << "\t splitplane                                  " << params.m_fileNameSp  << endl;
+		msg << "\t binvox                                      " << params.m_paramsVHACD.m_fileNameBvx << endl;
+		msg << "\t error                                       " << params.m_paramsVHACD.m_error << endl;
         msg << "+ Load mesh" << std::endl;
         myLogger.Log(msg.str().c_str());
 
@@ -335,6 +337,7 @@ void Usage(const Parameters& params)
     msg << "       --output                    VRML 2.0 output file name" << endl;
     msg << "       --log                       Log file name" << endl;
 	msg << "       --splitplanefile            SplitPlane file name" << endl;
+	msg << "       --binvox                    Binvox output voxel file name" << endl;
     msg << "       --resolution                Maximum number of voxels generated during the voxelization stage (default=100,000, range=10,000-16,000,000)" << endl;
     msg << "       --maxhulls                  Maximum number of convex hulls to produce." << endl;
     msg << "       --concavity                 Maximum allowed concavity (default=0.0025, range=0.0-1.0)" << endl;
@@ -381,6 +384,10 @@ void ParseParameters(int argc, char* argv[], Parameters& params)
 			if (++i < argc)
 				params.m_fileNameSp = argv[i];
 		}
+		else if (!strcmp(argv[i], "--binvox")) {
+			if (++i < argc)
+				params.m_paramsVHACD.m_fileNameBvx = argv[i];
+		}
         else if (!strcmp(argv[i], "--resolution")) {
             if (++i < argc)
                 params.m_paramsVHACD.m_resolution = atoi(argv[i]);
@@ -401,6 +408,10 @@ void ParseParameters(int argc, char* argv[], Parameters& params)
             if (++i < argc)
                 params.m_paramsVHACD.m_alpha = atof(argv[i]);
         }
+		else if (!strcmp(argv[i], "--error")) {
+			if (++i < argc)
+				params.m_paramsVHACD.m_error = atof(argv[i]);
+		}
         else if (!strcmp(argv[i], "--beta")) {
             if (++i < argc)
                 params.m_paramsVHACD.m_beta = atof(argv[i]);

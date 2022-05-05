@@ -371,7 +371,7 @@ private:
     cl_kernel* m_oclKernelComputeSum;
     size_t m_oclWorkGroupSize;
 #endif //CL_VERSION_1_1
-
+ 
     std::vector<int> m_treeIndices;
 	std::vector<std::string> m_splitPlanes;
 };

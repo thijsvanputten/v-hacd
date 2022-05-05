@@ -18,6 +18,15 @@
 #include "vhacdMesh.h"
 #include "vhacdVector.h"
 #include <assert.h>
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <stdio.h>
+#include <string.h>
+#include <string>
+#include <vector>
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -49,6 +58,7 @@ public:
     virtual const double GetEigenValue(AXIS axis) const = 0;
     virtual const double ComputeMaxVolumeError() const = 0;
     virtual const double ComputeVolume() const = 0;
+	virtual const Vec3<double>& GetMinBB() const = 0;
     virtual void Clip(const Plane& plane, PrimitiveSet* const positivePart,
         PrimitiveSet* const negativePart) const = 0;
     virtual void Intersect(const Plane& plane, SArray<Vec3<double> >* const positivePts,
@@ -89,6 +99,7 @@ public:
     const Vec3<short>& GetMinBBVoxels() const { return m_minBBVoxels; }
     const Vec3<short>& GetMaxBBVoxels() const { return m_maxBBVoxels; }
     const Vec3<double>& GetMinBB() const { return m_minBB; }
+	//const Vec3<double>& GetMaxBB() const { return m_maxBB; }
     const double& GetScale() const { return m_scale; }
     const double& GetUnitVolume() const { return m_unitVolume; }
     Vec3<double> GetPoint(Vec3<short> voxel) const
@@ -239,7 +250,8 @@ public:
     const size_t GetNPrimitivesInsideSurf() const { return m_numVoxelsInsideSurface; }
     void Convert(Mesh& mesh, const VOXEL_VALUE value) const;
     void Convert(VoxelSet& vset) const;
-    void Convert(TetrahedronSet& tset) const;
+	void Convert(TetrahedronSet& tset) const;
+	void ExportVoxel(VoxelSet& vset, const std::string& binvox_output) const;
     void AlignToPrincipalAxes(double (&rot)[3][3]) const;
 
 private:
