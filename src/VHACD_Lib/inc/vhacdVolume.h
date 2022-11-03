@@ -58,7 +58,9 @@ public:
     virtual const double GetEigenValue(AXIS axis) const = 0;
     virtual const double ComputeMaxVolumeError() const = 0;
     virtual const double ComputeVolume() const = 0;
-	virtual const Vec3<double>& GetMinBB() const = 0;
+	virtual const double ComputeMinBBSize() const = 0;
+	virtual const double ComputeMaxBBSize() const = 0;
+	virtual const double ComputeScale() const = 0;
     virtual void Clip(const Plane& plane, PrimitiveSet* const positivePart,
         PrimitiveSet* const negativePart) const = 0;
     virtual void Intersect(const Plane& plane, SArray<Vec3<double> >* const positivePts,
@@ -67,6 +69,7 @@ public:
         SArray<Vec3<double> >* const exteriorPts) const = 0;
     virtual void ComputeClippedVolumes(const Plane& plane, double& positiveVolume,
         double& negativeVolume) const = 0;
+	virtual void ComputeClippedInterface(const Plane& plane, double& insterfaceVolume) const = 0;
     virtual void SelectOnSurface(PrimitiveSet* const onSurfP) const = 0;
     virtual void ComputeConvexHull(Mesh& meshCH, const size_t sampling = 1) const = 0;
     virtual void ComputeBB() = 0;
@@ -95,11 +98,29 @@ public:
     const size_t GetNPrimitivesInsideSurf() const { return m_numVoxelsInsideSurface; }
     const double GetEigenValue(AXIS axis) const { return m_D[axis][axis]; }
     const double ComputeVolume() const { return m_unitVolume * m_voxels.Size(); }
+	const double ComputeScale() const { return m_scale; }
     const double ComputeMaxVolumeError() const { return m_unitVolume * m_numVoxelsOnSurface; }
+	const double ComputeMinBBSize() const {
+		const Vec3<short> m_diffBB = m_maxBBVoxels - m_minBBVoxels;
+		short min_s = m_diffBB.X();
+		if (m_diffBB.Y() < min_s) { min_s = m_diffBB.Y(); }
+		if (m_diffBB.Z() < min_s) { min_s = m_diffBB.Z(); }
+
+		return min_s * pow(m_unitVolume, 1.0 / 3)*m_scale;
+		
+	}
+	const double ComputeMaxBBSize() const {
+		const Vec3<short> m_diffBB = m_maxBBVoxels - m_minBBVoxels;
+		short max_s = m_diffBB.X();
+		if (m_diffBB.Y() > max_s) { max_s = m_diffBB.Y(); }
+		if (m_diffBB.Z() > max_s) { max_s = m_diffBB.Z(); }
+
+		return max_s * pow(m_unitVolume, 1.0 / 3) * m_scale;
+
+	}
     const Vec3<short>& GetMinBBVoxels() const { return m_minBBVoxels; }
     const Vec3<short>& GetMaxBBVoxels() const { return m_maxBBVoxels; }
     const Vec3<double>& GetMinBB() const { return m_minBB; }
-	//const Vec3<double>& GetMaxBB() const { return m_maxBB; }
     const double& GetScale() const { return m_scale; }
     const double& GetUnitVolume() const { return m_unitVolume; }
     Vec3<double> GetPoint(Vec3<short> voxel) const
@@ -128,6 +149,7 @@ public:
     void ComputeExteriorPoints(const Plane& plane, const Mesh& mesh,
         SArray<Vec3<double> >* const exteriorPts) const;
     void ComputeClippedVolumes(const Plane& plane, double& positiveVolume, double& negativeVolume) const;
+	void ComputeClippedInterface(const Plane& plane, double& insterfaceVolume) const;
     void SelectOnSurface(PrimitiveSet* const onSurfP) const;
     void ComputeBB();
     void Convert(Mesh& mesh, const VOXEL_VALUE value) const;
@@ -180,9 +202,12 @@ public:
     const Vec3<double>& GetMinBB() const { return m_minBB; }
     const Vec3<double>& GetMaxBB() const { return m_maxBB; }
     const Vec3<double>& GetBarycenter() const { return m_barycenter; }
+	const double ComputeMinBBSize() const {	return 0; }
+	const double ComputeMaxBBSize() const { return 0; }
     const double GetEigenValue(AXIS axis) const { return m_D[axis][axis]; }
     const double GetSacle() const { return m_scale; }
     const double ComputeVolume() const;
+	const double ComputeScale() const { return 0; }
     const double ComputeMaxVolumeError() const;
     void ComputeConvexHull(Mesh& meshCH, const size_t sampling = 1) const;
     void ComputePrincipalAxes();
@@ -194,6 +219,7 @@ public:
     void ComputeExteriorPoints(const Plane& plane, const Mesh& mesh,
         SArray<Vec3<double> >* const exteriorPts) const;
     void ComputeClippedVolumes(const Plane& plane, double& positiveVolume, double& negativeVolume) const;
+	void ComputeClippedInterface(const Plane& plane, double& insterfaceVolume) const {}
     void SelectOnSurface(PrimitiveSet* const onSurfP) const;
     void ComputeBB();
     void Convert(Mesh& mesh, const VOXEL_VALUE value) const;

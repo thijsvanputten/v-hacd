@@ -37,6 +37,7 @@ public:
 		const uint32_t countPoints,
 		const uint32_t* const _triangles,
 		const uint32_t countTriangles,
+		const uint32_t* const _trianglesBcs,
 		const Parameters& _desc) final
 	{
 #if ENABLE_ASYNC
@@ -49,10 +50,11 @@ public:
 		mIndices = (uint32_t *)HACD_ALLOC(sizeof(uint32_t)*countTriangles * 3);
 		memcpy(mVertices, _points, sizeof(double)*countPoints * 3);
 		memcpy(mIndices, _triangles, sizeof(uint32_t)*countTriangles * 3);
+		memcpy(mIndicesBcs, _trianglesBcs, sizeof(uint32_t) * countTriangles);
 		mRunning = true;
 		mThread = new std::thread([this, countPoints, countTriangles, _desc]()
 		{
-			ComputeNow(mVertices, countPoints, mIndices, countTriangles, _desc);
+			ComputeNow(mVertices, countPoints, mIndices, countTriangles, mIndicesBcs, _desc);
 			mRunning = false;
 		});
 #else
@@ -66,6 +68,7 @@ public:
 		const uint32_t countPoints,
 		const uint32_t* const triangles,
 		const uint32_t countTriangles,
+		const uint32_t* const trianglesBcs,
 		const Parameters& _desc) 
 	{
 		uint32_t ret = 0;
@@ -81,7 +84,7 @@ public:
 
 		if ( countPoints )
 		{
-			bool ok = mVHACD->Compute(points, countPoints, triangles, countTriangles, desc);
+			bool ok = mVHACD->Compute(points, countPoints, triangles, countTriangles, trianglesBcs, desc);
 			if (ok)
 			{
 				ret = mVHACD->GetNConvexHulls();
@@ -181,6 +184,7 @@ public:
 		const uint32_t countPoints,
 		const uint32_t* const triangles,
 		const uint32_t countTriangles,
+		const uint32_t* const trianglesBcs,
 		const Parameters& params) final
 	{
 
@@ -196,7 +200,7 @@ public:
 			source += 3;
 		}
 
-		bool ret =  Compute(vertices, countPoints, triangles, countTriangles, params);
+		bool ret =  Compute(vertices, countPoints, triangles, countTriangles, trianglesBcs, params);
 		HACD_FREE(vertices);
 		return ret;
 	}
@@ -303,6 +307,7 @@ public:
 private:
 	double							*mVertices{ nullptr };
 	uint32_t						*mIndices{ nullptr };
+	uint32_t						*mIndicesBcs{ nullptr };
 	std::atomic< uint32_t>			mHullCount{ 0 };
 	VHACD::IVHACD::ConvexHull		*mHulls{ nullptr };
 	VHACD::IVHACD::IUserCallback	*mCallback{ nullptr };

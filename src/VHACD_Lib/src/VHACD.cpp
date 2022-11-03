@@ -442,12 +442,12 @@ void VHACD::ComputePrimitiveSet(const Parameters& params)
     }
 }
 bool VHACD::Compute(const double* const points, const uint32_t nPoints,
-    const uint32_t* const triangles,const uint32_t nTriangles, const Parameters& params)
+    const uint32_t* const triangles,const uint32_t nTriangles, const uint32_t* const trianglesBcs, const Parameters& params)
 {
     return ComputeACD(points, nPoints, triangles, nTriangles, params);
 }
 bool VHACD::Compute(const float* const points,const uint32_t nPoints,
-    const uint32_t* const triangles,const uint32_t nTriangles, const Parameters& params)
+    const uint32_t* const triangles,const uint32_t nTriangles, const uint32_t* const trianglesBcs, const Parameters& params)
 {
     return ComputeACD(points, nPoints, triangles, nTriangles, params);
 }
@@ -678,7 +678,6 @@ inline double ComputeConcavity(const double volume, const double volumeCH, const
 {
     return fabs(volumeCH - volume) / volume0;
 }
-
 //#define DEBUG_TEMP
 void VHACD::ComputeBestClippingPlane(const PrimitiveSet* inputPSet, const double volume, const SArray<Plane>& planes,
     const Vec3<double>& preferredCuttingDirection, const double w, const double alpha, const double beta,
@@ -698,6 +697,7 @@ void VHACD::ComputeBestClippingPlane(const PrimitiveSet* inputPSet, const double
     double minTotal = MAX_DOUBLE;
     double minBalance = MAX_DOUBLE;
     double minSymmetry = MAX_DOUBLE;
+	double minRatio = MAX_DOUBLE;
     minConcavity = MAX_DOUBLE;
 
     SArray<Vec3<double> >* chPts = new SArray<Vec3<double> >[2 * m_ompNumProcessors];
@@ -914,20 +914,29 @@ void VHACD::ComputeBestClippingPlane(const PrimitiveSet* inputPSet, const double
             double concavityRight = ComputeConcavity(volumeRight, volumeRightCH, m_volumeCH0);
             double concavity = (concavityLeft + concavityRight);
 
+			//compute ratio interface volume other volume
+			double interfaceVolume = 0.0;
+			inputPSet->ComputeClippedInterface(plane, interfaceVolume);
+			double ratioRight = interfaceVolume / volumeRight;
+			double ratioLeft = interfaceVolume / volumeLeft;
+			double ratio = 10.* max(ratioLeft, ratioRight);
+
             // compute cost
             double balance = alpha * fabs(volumeLeft - volumeRight) / m_volumeCH0;
             double d = w * (preferredCuttingDirection[0] * plane.m_a + preferredCuttingDirection[1] * plane.m_b + preferredCuttingDirection[2] * plane.m_c);
             double symmetry = beta * d;
-            double total = concavity + balance + symmetry;
+            double total = concavity + balance + symmetry + ratio;
+			
 
 #if USE_THREAD == 1 && _OPENMP
 #pragma omp critical
 #endif
             {
-                if (total < minTotal || (total == minTotal && x < iBest)) {
+				if (total < minTotal || (total == minTotal && x < iBest)) {
                     minConcavity = concavity;
                     minBalance = balance;
                     minSymmetry = symmetry;
+					minRatio = ratio;
                     bestPlane = plane;
                     minTotal = total;
                     iBest = x;
@@ -1057,30 +1066,46 @@ void VHACD::ComputeACD(const Parameters& params)
             }
 
             double concavity = ComputeConcavity(volume, volumeCH, m_volumeCH0);
-            //double error = 1.01 * pset->ComputeMaxVolumeError() / m_volumeCH0;
 
-			double error = params.m_error * pset->ComputeMaxVolumeError() / m_volumeCH0;
+			double error = params.m_error;
+			if (params.m_error > 1) {
+				double error = 1.01 * pset->ComputeMaxVolumeError() / m_volumeCH0;
+			}
+				
 
+			//double error = params.m_error * pset->ComputeMaxVolumeError() / m_volumeCH0;
 
-			const Vec3<double> minV = pset->GetMinBB();
-			//const Vec3<short> maxV = pset->GetMaxBBVoxels();
+			
+			const double min_bb_size = pset->ComputeMinBBSize();
+			const double max_bb_size = pset->ComputeMaxBBSize();
+			double ar = max_bb_size / min_bb_size;
 
             if (firstIteration) {
                 firstIteration = false;
             }
+			double m_minsize = pset->ComputeScale() * params.m_minsegsize;
+			double m_maxsize = pset->ComputeScale() * params.m_maxsegsize;
 
             if (params.m_logger) {
                 msg.str("");
                 msg << "\t -> Part[" << p
                     << "] C  = " << concavity
                     << ", E  = " << error
+					<< ", BBS= " << min_bb_size
                     << ", VS = " << pset->GetNPrimitivesOnSurf()
                     << ", VI = " << pset->GetNPrimitivesInsideSurf()
                     << std::endl;
                 params.m_logger->Log(msg.str().c_str());
             }
-			//if (concavity > params.m_concavity) {
-			if (concavity > params.m_concavity && concavity > error) {
+			//force splitting
+			double target_concavity = params.m_concavity;
+			if (min_bb_size > 0.00001 && max_bb_size > m_maxsize)
+			{
+				concavity = target_concavity + 1.0;
+			}
+			//|| (min_bb_size > 0.00001&& max_bb_size > m_maxsize
+
+			if ((concavity > target_concavity && concavity > error && min_bb_size > m_minsize) || (min_bb_size > 0.00001 && ar > params.m_maxaspectratio) ) {
                 Vec3<double> preferredCuttingDirection;
                 double w = ComputePreferredCuttingDirection(pset, preferredCuttingDirection);
                 planes.Resize(0);

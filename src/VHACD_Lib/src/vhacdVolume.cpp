@@ -619,6 +619,26 @@ void VoxelSet::ComputeClippedVolumes(const Plane& plane,
     positiveVolume = m_unitVolume * nPositiveVoxels;
     negativeVolume = m_unitVolume * nNegativeVoxels;
 }
+//Flavien surface to volume ratio
+void VoxelSet::ComputeClippedInterface(const Plane& plane,
+	double& interfaceVolume) const
+{
+	interfaceVolume = 0.0;
+	const size_t nVoxels = m_voxels.Size();
+	if (nVoxels == 0)
+		return;
+	double d;
+	double unitsize = pow(m_unitVolume, 1.0 / 3);
+	Vec3<double> pt;
+	size_t nInterfaceVoxels = 0;
+	for (size_t v = 0; v < nVoxels; ++v) {
+		pt = GetPoint(m_voxels[v]);
+		d = plane.m_a * pt[0] + plane.m_b * pt[1] + plane.m_c * pt[2] + plane.m_d;
+		nInterfaceVoxels += (d >= 0.0 && d<= (0.8* unitsize));
+	}
+	interfaceVolume = m_unitVolume * nInterfaceVoxels;
+}
+
 void VoxelSet::SelectOnSurface(PrimitiveSet* const onSurfP) const
 {
     VoxelSet* const onSurf = (VoxelSet*)onSurfP;

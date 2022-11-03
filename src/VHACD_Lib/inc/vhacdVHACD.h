@@ -107,11 +107,13 @@ public:
         const uint32_t nPoints,
         const uint32_t* const triangles,
         const uint32_t nTriangles,
+		const uint32_t* const trianglesBcs,
         const Parameters& params);
     bool Compute(const double* const points,
         const uint32_t nPoints,
         const uint32_t* const triangles,
         const uint32_t nTriangles,
+		const uint32_t* const trianglesBcs,
         const Parameters& params);
     bool OCLInit(void* const oclDevice,
         IUserLogger* const logger = 0);

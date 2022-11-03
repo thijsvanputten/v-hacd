@@ -84,7 +84,10 @@ public:
             m_beta = 0.05;
             m_pca = 0;
             m_mode = 0; // 0: voxel-based (recommended), 1: tetrahedron-based
-			m_error = 1.01; //error of volume vs surface
+			m_error = 0.000005; //error of volume vs surface
+			m_minsegsize = 3.0; //minimum size of the macro element
+			m_maxaspectratio = 20.; //maximum aspect ratio of a macro element
+			m_maxsegsize = 100000; //maximum size of a macro element
             m_maxNumVerticesPerCH = 64;
             m_minVolumePerCH = 0.0001;
             m_callback = 0;
@@ -99,6 +102,9 @@ public:
         double m_alpha;
         double m_beta;
 		double m_error;
+		double m_minsegsize;
+		double m_maxaspectratio;
+		double m_maxsegsize;
         double m_minVolumePerCH;
         IUserCallback* m_callback;
         IUserLogger* m_logger;
@@ -120,12 +126,14 @@ public:
         const uint32_t countPoints,
         const uint32_t* const triangles,
         const uint32_t countTriangles,
+		const uint32_t* const trianglesBcs,
         const Parameters& params)
         = 0;
     virtual bool Compute(const double* const points,
         const uint32_t countPoints,
         const uint32_t* const triangles,
         const uint32_t countTriangles,
+		const uint32_t* const trianglesBcs,
         const Parameters& params)
         = 0;
     virtual uint32_t GetNConvexHulls() const = 0;

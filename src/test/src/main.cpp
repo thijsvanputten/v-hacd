@@ -115,7 +115,7 @@ struct Parameters {
     }
 };
 bool LoadOFF(const string& fileName, vector<float>& points, vector<int>& triangles, IVHACD::IUserLogger& logger);
-bool LoadOBJ(const string& fileName, vector<float>& points, vector<int>& triangles, IVHACD::IUserLogger& logger);
+bool LoadOBJ(const string& fileName, vector<float>& points, vector<int>& triangles, vector<bool>& trianglesBcs, IVHACD::IUserLogger& logger);
 bool SaveOFF(const string& fileName, const float* const& points, const int* const& triangles, const unsigned int& nPoints,
     const unsigned int& nTriangles, IVHACD::IUserLogger& logger);
 bool SaveVRML2(ofstream& fout, const double* const& points, const int* const& triangles, const unsigned int& nPoints,
@@ -200,7 +200,8 @@ int main(int argc, char* argv[])
         // load mesh
         vector<float> points;
         vector<int> triangles;
-        string fileExtension;
+		vector<bool> trianglesBcs;
+        string fileExtension; //MODIF FLAVIEN
         GetFileExtension(params.m_fileNameIn, fileExtension);
         if (fileExtension == ".OFF") {
             if (!LoadOFF(params.m_fileNameIn, points, triangles, myLogger)) {
@@ -208,7 +209,7 @@ int main(int argc, char* argv[])
             }
         }
         else if (fileExtension == ".OBJ") {
-            if (!LoadOBJ(params.m_fileNameIn, points, triangles, myLogger)) {
+            if (!LoadOBJ(params.m_fileNameIn, points, triangles, trianglesBcs, myLogger)) {
                 return -1;
             }
         }
@@ -229,7 +230,7 @@ int main(int argc, char* argv[])
         }
 #endif //CL_VERSION_1_1
         bool res = interfaceVHACD->Compute(&points[0], (unsigned int)points.size() / 3,
-            (const uint32_t *)&triangles[0], (unsigned int)triangles.size() / 3, params.m_paramsVHACD);
+            (const uint32_t *)&triangles[0], (unsigned int)triangles.size() / 3, (const uint32_t *)&trianglesBcs[0], params.m_paramsVHACD);
 
 
 
@@ -350,6 +351,9 @@ void Usage(const Parameters& params)
     msg << "       --pca                       Enable/disable normalizing the mesh before applying the convex decomposition (default=0, range={0,1})" << endl;
     msg << "       --mode                      0: voxel-based approximate convex decomposition, 1: tetrahedron-based approximate convex decomposition (default=0, range={0,1})" << endl;
     msg << "       --maxNumVerticesPerCH       Controls the maximum number of triangles per convex-hull (default=64, range=4-1024)" << endl;
+	msg << "       --minsegsize                Controls the minimum size of the segmented volume (default=3)" << endl;
+	msg << "       --maxsegsize                Controls the maximum size of the segmented volume (default=100000)" << endl;
+	msg << "       --maxaspectratio            Controls the maximun aspect ratio of a segmented volume (default=20)" << endl;
     msg << "       --minVolumePerCH            Controls the adaptive sampling of the generated convex-hulls (default=0.0001, range=0.0-0.01)" << endl;
     msg << "       --convexhullApproximation   Enable/disable approximation when computing convex-hulls (default=1, range={0,1})" << endl;
     msg << "       --oclAcceleration           Enable/disable OpenCL acceleration (default=0, range={0,1})" << endl;
@@ -411,6 +415,18 @@ void ParseParameters(int argc, char* argv[], Parameters& params)
 		else if (!strcmp(argv[i], "--error")) {
 			if (++i < argc)
 				params.m_paramsVHACD.m_error = atof(argv[i]);
+		}
+		else if (!strcmp(argv[i], "--minsegsize")) {
+			if (++i < argc)
+				params.m_paramsVHACD.m_minsegsize = atof(argv[i]);
+		}
+		else if (!strcmp(argv[i], "--maxaspectratio")) {
+			if (++i < argc)
+				params.m_paramsVHACD.m_maxaspectratio = atof(argv[i]);
+		}
+		else if (!strcmp(argv[i], "--maxsegsize")) {
+			if (++i < argc)
+				params.m_paramsVHACD.m_maxsegsize = atof(argv[i]);
 		}
         else if (!strcmp(argv[i], "--beta")) {
             if (++i < argc)
@@ -566,15 +582,17 @@ bool LoadOFF(const string& fileName, vector<float>& points, vector<int>& triangl
     }
     return true;
 }
-bool LoadOBJ(const string& fileName, vector<float>& points, vector<int>& triangles, IVHACD::IUserLogger& logger)
+bool LoadOBJ(const string& fileName, vector<float>& points, vector<int>& triangles, vector<bool>& trianglesBcs, IVHACD::IUserLogger& logger)
 {
     const unsigned int BufferSize = 1024;
     FILE* fid = fopen(fileName.c_str(), "r");
 
+	vector<bool> pointsBcs;
+
     if (fid) {
         char buffer[BufferSize];
         int ip[4];
-        float x[3];
+        float x[4];
         char* pch;
         char* str;
         while (!feof(fid)) {
@@ -584,7 +602,7 @@ bool LoadOBJ(const string& fileName, vector<float>& points, vector<int>& triangl
             else if (buffer[0] == 'v') {
                 if (buffer[1] == ' ') {
                     str = buffer + 2;
-                    for (int k = 0; k < 3; ++k) {
+                    for (int k = 0; k < 4; ++k) {
                         pch = strtok(str, " ");
                         if (pch)
                             x[k] = (float)atof(pch);
@@ -596,6 +614,12 @@ bool LoadOBJ(const string& fileName, vector<float>& points, vector<int>& triangl
                     points.push_back(x[0]);
                     points.push_back(x[1]);
                     points.push_back(x[2]);
+					if (x[3] == 1.0) {
+						pointsBcs.push_back(true);
+					}
+					else {
+						pointsBcs.push_back(false);
+					}
                 }
             }
             else if (buffer[0] == 'f') {
@@ -616,6 +640,12 @@ bool LoadOBJ(const string& fileName, vector<float>& points, vector<int>& triangl
                     triangles.push_back(ip[0]);
                     triangles.push_back(ip[1]);
                     triangles.push_back(ip[2]);
+					if (pointsBcs[ip[0]] == true) {
+						trianglesBcs.push_back(true);
+					}
+					else {
+						trianglesBcs.push_back(false);
+					}
                 }
                 else if (k == 4) {
                     triangles.push_back(ip[0]);
