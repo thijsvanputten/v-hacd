@@ -115,7 +115,7 @@ struct Parameters {
     }
 };
 bool LoadOFF(const string& fileName, vector<float>& points, vector<int>& triangles, IVHACD::IUserLogger& logger);
-bool LoadOBJ(const string& fileName, vector<float>& points, vector<int>& triangles, vector<bool>& trianglesBcs, IVHACD::IUserLogger& logger);
+bool LoadOBJ(const string& fileName, vector<float>& points, vector<int>& triangles, vector<int>& trianglesBcs, IVHACD::IUserLogger& logger);
 bool SaveOFF(const string& fileName, const float* const& points, const int* const& triangles, const unsigned int& nPoints,
     const unsigned int& nTriangles, IVHACD::IUserLogger& logger);
 bool SaveVRML2(ofstream& fout, const double* const& points, const int* const& triangles, const unsigned int& nPoints,
@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
         // load mesh
         vector<float> points;
         vector<int> triangles;
-		vector<bool> trianglesBcs;
+		vector<int> trianglesBcs;
         string fileExtension; //MODIF FLAVIEN
         GetFileExtension(params.m_fileNameIn, fileExtension);
         if (fileExtension == ".OFF") {
@@ -230,7 +230,7 @@ int main(int argc, char* argv[])
         }
 #endif //CL_VERSION_1_1
         bool res = interfaceVHACD->Compute(&points[0], (unsigned int)points.size() / 3,
-            (const uint32_t *)&triangles[0], (unsigned int)triangles.size() / 3, (const uint32_t *)&trianglesBcs[0], params.m_paramsVHACD);
+            (const uint32_t *)&triangles[0], (unsigned int)triangles.size() / 3, (const uint32_t*)&trianglesBcs[0], params.m_paramsVHACD);
 
 
 
@@ -582,7 +582,7 @@ bool LoadOFF(const string& fileName, vector<float>& points, vector<int>& triangl
     }
     return true;
 }
-bool LoadOBJ(const string& fileName, vector<float>& points, vector<int>& triangles, vector<bool>& trianglesBcs, IVHACD::IUserLogger& logger)
+bool LoadOBJ(const string& fileName, vector<float>& points, vector<int>& triangles, vector<int>& trianglesBcs, IVHACD::IUserLogger& logger)
 {
     const unsigned int BufferSize = 1024;
     FILE* fid = fopen(fileName.c_str(), "r");
@@ -641,10 +641,10 @@ bool LoadOBJ(const string& fileName, vector<float>& points, vector<int>& triangl
                     triangles.push_back(ip[1]);
                     triangles.push_back(ip[2]);
 					if (pointsBcs[ip[0]] == true) {
-						trianglesBcs.push_back(true);
+						trianglesBcs.push_back(1);
 					}
 					else {
-						trianglesBcs.push_back(false);
+						trianglesBcs.push_back(0);
 					}
                 }
                 else if (k == 4) {

@@ -196,6 +196,7 @@ private:
         const int32_t* const triangles,
         const uint32_t strideTriangles,
         const uint32_t nTriangles,
+		const int32_t* const trianglesBcs,
         const Parameters& params)
     {
         if (GetCancel() || !params.m_pca) {
@@ -219,7 +220,7 @@ private:
         m_dim = (size_t)(pow((double)params.m_resolution, 1.0 / 3.0) + 0.5);
         Volume volume;
         volume.Voxelize(points, stridePoints, nPoints,
-            triangles, strideTriangles, nTriangles,
+            triangles, strideTriangles, nTriangles, trianglesBcs,
             m_dim, m_barycenter, m_rot);
         size_t n = volume.GetNPrimitivesOnSurf() + volume.GetNPrimitivesInsideSurf();
         Update(50.0, 100.0, params);
@@ -252,6 +253,7 @@ private:
         const int32_t* const triangles,
         const uint32_t strideTriangles,
         const uint32_t nTriangles,
+		const int32_t* const trianglesBcs,
         const Parameters& params)
     {
         if (GetCancel()) {
@@ -282,7 +284,7 @@ private:
 
             m_volume = new Volume;
             m_volume->Voxelize(points, stridePoints, nPoints,
-                triangles, strideTriangles, nTriangles,
+                triangles, strideTriangles, nTriangles, trianglesBcs,
                 m_dim, m_barycenter, m_rot);
 
             Update(progress, 100.0, params);
@@ -320,6 +322,7 @@ private:
         const uint32_t nPoints,
         const uint32_t* const triangles,
         const uint32_t nTriangles,
+		const uint32_t* const trianglesBcs,
         const Parameters& params)
     {
         Init();
@@ -330,8 +333,8 @@ private:
         if (params.m_oclAcceleration) {
             // build kernels
         }
-        AlignMesh(points, 3, nPoints, (int32_t *)triangles, 3, nTriangles, params);
-        VoxelizeMesh(points, 3, nPoints, (int32_t *)triangles, 3, nTriangles, params);
+        AlignMesh(points, 3, nPoints, (int32_t *)triangles, 3, nTriangles, (int32_t*)trianglesBcs, params);
+        VoxelizeMesh(points, 3, nPoints, (int32_t *)triangles, 3, nTriangles, (int32_t*)trianglesBcs, params);
         ComputePrimitiveSet(params);
         ComputeACD(params);
         MergeConvexHulls(params);

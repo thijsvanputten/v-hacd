@@ -39,13 +39,15 @@ enum VOXEL_VALUE {
     PRIMITIVE_UNDEFINED = 0,
     PRIMITIVE_OUTSIDE_SURFACE = 1,
     PRIMITIVE_INSIDE_SURFACE = 2,
-    PRIMITIVE_ON_SURFACE = 3
+    PRIMITIVE_ON_SURFACE = 3,
+	PRIMITIVE_ON_BCS = 4
 };
 
 struct Voxel {
 public:
     short m_coord[3];
     short m_data;
+	//short m_data_bcs;
 };
 
 class PrimitiveSet {
@@ -256,7 +258,7 @@ public:
     //! Voxelize
     template <class T>
     void Voxelize(const T* const points, const uint32_t stridePoints, const uint32_t nPoints,
-        const int32_t* const triangles, const uint32_t strideTriangles, const uint32_t nTriangles,
+        const int32_t* const triangles, const uint32_t strideTriangles, const uint32_t nTriangles, const int32_t* const trianglesBcs,
         const size_t dim, const Vec3<double>& barycenter, const double (&rot)[3][3]);
     unsigned char& GetVoxel(const size_t i, const size_t j, const size_t k)
     {
@@ -272,12 +274,26 @@ public:
         assert(k < m_dim[0] || k >= 0);
         return m_data[i + j * m_dim[0] + k * m_dim[0] * m_dim[1]];
     }
+	unsigned char& GetVoxelBcs(const size_t i, const size_t j, const size_t k)
+	{
+		assert(i < m_dim[0] || i >= 0);
+		assert(j < m_dim[0] || j >= 0);
+		assert(k < m_dim[0] || k >= 0);
+		return m_data_bcs[i + j * m_dim[0] + k * m_dim[0] * m_dim[1]];
+	}
+	const unsigned char& GetVoxelBcs(const size_t i, const size_t j, const size_t k) const
+	{
+		assert(i < m_dim[0] || i >= 0);
+		assert(j < m_dim[0] || j >= 0);
+		assert(k < m_dim[0] || k >= 0);
+		return m_data_bcs[i + j * m_dim[0] + k * m_dim[0] * m_dim[1]];
+	}
     const size_t GetNPrimitivesOnSurf() const { return m_numVoxelsOnSurface; }
     const size_t GetNPrimitivesInsideSurf() const { return m_numVoxelsInsideSurface; }
     void Convert(Mesh& mesh, const VOXEL_VALUE value) const;
     void Convert(VoxelSet& vset) const;
 	void Convert(TetrahedronSet& tset) const;
-	void ExportVoxel(VoxelSet& vset, const std::string& binvox_output) const;
+	void ExportVoxel(const std::string& binvox_output) const;
     void AlignToPrincipalAxes(double (&rot)[3][3]) const;
 
 private:
@@ -297,7 +313,9 @@ private:
     size_t m_numVoxelsOnSurface;
     size_t m_numVoxelsInsideSurface;
     size_t m_numVoxelsOutsideSurface;
+	size_t m_numVoxelsBcs;
     unsigned char* m_data;
+	unsigned char* m_data_bcs;
 };
 int32_t TriBoxOverlap(const Vec3<double>& boxcenter, const Vec3<double>& boxhalfsize, const Vec3<double>& triver0,
     const Vec3<double>& triver1, const Vec3<double>& triver2);
@@ -344,7 +362,7 @@ void Volume::ComputeBB(const T* const points, const uint32_t stridePoints, const
 }
 template <class T>
 void Volume::Voxelize(const T* const points, const uint32_t stridePoints, const uint32_t nPoints,
-    const int32_t* const triangles, const uint32_t strideTriangles, const uint32_t nTriangles,
+    const int32_t* const triangles, const uint32_t strideTriangles, const uint32_t nTriangles, const int32_t* const trianglesBcs,
     const size_t dim, const Vec3<double>& barycenter, const double (&rot)[3][3])
 {
     if (nPoints == 0) {
@@ -446,6 +464,11 @@ void Volume::Voxelize(const T* const points, const uint32_t stridePoints, const 
                         value = PRIMITIVE_ON_SURFACE;
                         ++m_numVoxelsOnSurface;
                     }
+					unsigned char& valuebcs = GetVoxelBcs(i, j, k); //MODIF FLAVIEN
+					if (res == 1 && valuebcs == PRIMITIVE_UNDEFINED && trianglesBcs[t] == 1) {
+						valuebcs = PRIMITIVE_ON_BCS;
+						++m_numVoxelsBcs;
+					}
                 }
             }
         }

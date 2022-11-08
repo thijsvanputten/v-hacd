@@ -411,8 +411,8 @@ void VHACD::ComputePrimitiveSet(const Parameters& params)
     Update(0.0, 0.0, params);
     if (params.m_mode == 0) {
         VoxelSet* vset = new VoxelSet;
+		m_volume->ExportVoxel(params.m_fileNameBvx); //Flavien modif to export the voxel
         m_volume->Convert(*vset);
-		//m_volume->ExportVoxel(*vset, params.m_fileNameBvx); //Flavien modif to export the voxel
         m_pset = vset;
     }
     else {
@@ -444,12 +444,12 @@ void VHACD::ComputePrimitiveSet(const Parameters& params)
 bool VHACD::Compute(const double* const points, const uint32_t nPoints,
     const uint32_t* const triangles,const uint32_t nTriangles, const uint32_t* const trianglesBcs, const Parameters& params)
 {
-    return ComputeACD(points, nPoints, triangles, nTriangles, params);
+    return ComputeACD(points, nPoints, triangles, nTriangles, trianglesBcs, params);
 }
 bool VHACD::Compute(const float* const points,const uint32_t nPoints,
     const uint32_t* const triangles,const uint32_t nTriangles, const uint32_t* const trianglesBcs, const Parameters& params)
 {
-    return ComputeACD(points, nPoints, triangles, nTriangles, params);
+    return ComputeACD(points, nPoints, triangles, nTriangles, trianglesBcs, params);
 }
 double ComputePreferredCuttingDirection(const PrimitiveSet* const tset, Vec3<double>& dir)
 {

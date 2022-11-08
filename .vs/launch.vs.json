@@ -41,11 +41,11 @@
         "--minsegsize",
         "0.254",
         "--maxsegsize",
-        "15.24.",
+        "100.",
         "--concavity",
         "0.00025",
         "--maxaspectratio",
-        "2."
+        "10."
       ]
     }
   ]

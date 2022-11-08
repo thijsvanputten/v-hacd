@@ -796,24 +796,33 @@ Volume::Volume()
     m_numVoxelsOnSurface = 0;
     m_numVoxelsInsideSurface = 0;
     m_numVoxelsOutsideSurface = 0;
+	m_numVoxelsBcs = 0;
     m_scale = 1.0;
     m_data = 0;
+	m_data_bcs = 0;
 }
 Volume::~Volume(void)
 {
     delete[] m_data;
+	//delete[] m_data_bcs;
 }
 void Volume::Allocate()
 {
     delete[] m_data;
+	delete[] m_data_bcs;
     size_t size = m_dim[0] * m_dim[1] * m_dim[2];
+	size_t sizeBcs = m_dim[0] * m_dim[1] * m_dim[2];
     m_data = new unsigned char[size];
-    memset(m_data, PRIMITIVE_UNDEFINED, sizeof(unsigned char) * size);
+	m_data_bcs = new unsigned char[sizeBcs];
+	memset(m_data, PRIMITIVE_UNDEFINED, sizeof(unsigned char) * size);
+	memset(m_data_bcs, PRIMITIVE_UNDEFINED, sizeof(unsigned char) * sizeBcs); //FLAVIEN
 }
 void Volume::Free()
 {
     delete[] m_data;
+	delete[] m_data_bcs;
     m_data = 0;
+	m_data_bcs = 0;
 }
 void Volume::FillOutsideSurface(const size_t i0,
     const size_t j0,
@@ -926,7 +935,7 @@ void Volume::Convert(Mesh& mesh, const VOXEL_VALUE value) const
         }
     }
 }
-void Volume::ExportVoxel(VoxelSet& vset, const std::string& binvox_output) const
+void Volume::ExportVoxel(const std::string& binvox_output) const
 {
 	// Open file
 	//string filename_output = "D:\\1_DATA\\0_TESTDATA\\COMPS\\7_HOLE\\hole.binvox";
@@ -958,17 +967,21 @@ void Volume::ExportVoxel(VoxelSet& vset, const std::string& binvox_output) const
 				if (i == 0 && j == 0 && k == 0) { // special case: first voxel
 					//currentvalue = checkVoxel(0, 0, 0, v_info.gridsize, vtable);
 					const unsigned char& value = GetVoxel(0, 0, 0);
+					const unsigned char& valueBcs = GetVoxelBcs(0, 0, 0);
 					if (value == PRIMITIVE_INSIDE_SURFACE) {
-						currentvalue = true;
+						currentvalue = false; //true
 					}
 					else if (value == PRIMITIVE_ON_SURFACE) {
-						currentvalue = true;
+						currentvalue = false; //true
 					}
 					else if (value == PRIMITIVE_OUTSIDE_SURFACE) {
 						currentvalue = false;
 					}
 					else {
 						currentvalue = false;
+					}
+					if (valueBcs == PRIMITIVE_ON_BCS) {
+						currentvalue = true;
 					}
 					output.write((char*)& currentvalue, 1);
 					current_seen = 1;
@@ -977,17 +990,21 @@ void Volume::ExportVoxel(VoxelSet& vset, const std::string& binvox_output) const
 				//char nextvalue = checkVoxel(x, y, z, v_info.gridsize, vtable);
 				char nextvalue = true;
 				const unsigned char& value = GetVoxel(i, j, k);
+				const unsigned char& valueBcs = GetVoxelBcs(i, j, k);
 				if (value == PRIMITIVE_INSIDE_SURFACE) {
-					nextvalue = true;
+					nextvalue = false; //true
 				}
 				else if (value == PRIMITIVE_ON_SURFACE) {
-					nextvalue = true;
+					nextvalue = false; //true
 				}
 				else if (value == PRIMITIVE_OUTSIDE_SURFACE) {
-					nextvalue = false;
+					nextvalue = false; //false
 				}
 				else {
 					nextvalue = false;
+				}
+				if (valueBcs == PRIMITIVE_ON_BCS) {
+					nextvalue = true;
 				}
 				if (nextvalue != currentvalue || current_seen == (char)255) {
 					output.write((char*)& current_seen, 1);
