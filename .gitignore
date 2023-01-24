@@ -2,7 +2,9 @@
 data/
 data2/
 build/
+build_lin/
 install/
+install_lin/
 /DebugView/compiler/vc14win64/.vs/ConvexDecomposition/v14
 /DebugView/ConvexDecomposition.exe.pdb
 /DebugView/ConvexDecomposition.ilk
