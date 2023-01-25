@@ -920,7 +920,7 @@ void VHACD::ComputeBestClippingPlane(const PrimitiveSet* inputPSet, const double
 			inputPSet->ComputeClippedInterface(plane, interfaceVolume);
 			double ratioRight = interfaceVolume / volumeRight;
 			double ratioLeft = interfaceVolume / volumeLeft;
-			double ratio = 10.* max(ratioLeft, ratioRight);
+			double ratio = 10.* MAX(ratioLeft, ratioRight);
 
             // compute cost
             double balance = alpha * fabs(volumeLeft - volumeRight) / m_volumeCH0;
