@@ -411,7 +411,7 @@ void VHACD::ComputePrimitiveSet(const Parameters& params)
     Update(0.0, 0.0, params);
     if (params.m_mode == 0) {
         VoxelSet* vset = new VoxelSet;
-		m_volume->ExportVoxel(params.m_fileNameBvx); //Flavien modif to export the voxel
+		//m_volume->ExportVoxel(params.m_fileNameBvx); //Flavien modif to export the voxel
         m_volume->Convert(*vset);
         m_pset = vset;
     }
@@ -429,6 +429,7 @@ void VHACD::ComputePrimitiveSet(const Parameters& params)
         msg << "\t # primitives               " << m_pset->GetNPrimitives() << std::endl;
         msg << "\t # inside surface           " << m_pset->GetNPrimitivesInsideSurf() << std::endl;
         msg << "\t # on surface               " << m_pset->GetNPrimitivesOnSurf() << std::endl;
+		msg << "\t # on bcs                   " << m_pset->GetNPrimitivesOnBcs() << std::endl;
         params.m_logger->Log(msg.str().c_str());
     }
 
@@ -1072,8 +1073,9 @@ void VHACD::ComputeACD(const Parameters& params)
 				double error = 1.01 * pset->ComputeMaxVolumeError() / m_volumeCH0;
 			}
 				
-
-			//double error = params.m_error * pset->ComputeMaxVolumeError() / m_volumeCH0;
+			//FLAVIEN to put the BCS
+			//double bccs1 = pset->ComputeBcsVolume();
+			double bcsvolume = pset->ComputeBcsVolume() / m_volumeCH0;
 
 			
 			const double min_bb_size = pset->ComputeMinBBSize();
@@ -1092,7 +1094,9 @@ void VHACD::ComputeACD(const Parameters& params)
                     << "] C  = " << concavity
                     << ", E  = " << error
 					<< ", BBS= " << min_bb_size
+					<< ", BCSR= " << bcsvolume
                     << ", VS = " << pset->GetNPrimitivesOnSurf()
+					<< ", VBC= " << pset->GetNPrimitivesOnBcs()
                     << ", VI = " << pset->GetNPrimitivesInsideSurf()
                     << std::endl;
                 params.m_logger->Log(msg.str().c_str());
@@ -1104,6 +1108,12 @@ void VHACD::ComputeACD(const Parameters& params)
 				concavity = target_concavity + 1.0;
 			}
 			//|| (min_bb_size > 0.00001&& max_bb_size > m_maxsize
+			//FLAVIEN force also where BCS are located
+			if (bcsvolume > 0. && min_bb_size > 0.00001 && max_bb_size > m_maxsize / params.m_refinebcs && ar <= params.m_maxaspectratio)
+			{
+				//double tes = 0.;
+				concavity = target_concavity + 1.0;
+			}
 
 			if ((concavity > target_concavity && concavity > error && min_bb_size > m_minsize) || (min_bb_size > 0.00001 && ar > params.m_maxaspectratio) ) {
                 Vec3<double> preferredCuttingDirection;

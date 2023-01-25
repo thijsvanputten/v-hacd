@@ -354,6 +354,7 @@ void Usage(const Parameters& params)
 	msg << "       --minsegsize                Controls the minimum size of the segmented volume (default=3)" << endl;
 	msg << "       --maxsegsize                Controls the maximum size of the segmented volume (default=100000)" << endl;
 	msg << "       --maxaspectratio            Controls the maximun aspect ratio of a segmented volume (default=20)" << endl;
+	msg << "       --refinebcs                 Controls the local refinement near boundary conditions (default=20)" << endl;
     msg << "       --minVolumePerCH            Controls the adaptive sampling of the generated convex-hulls (default=0.0001, range=0.0-0.01)" << endl;
     msg << "       --convexhullApproximation   Enable/disable approximation when computing convex-hulls (default=1, range={0,1})" << endl;
     msg << "       --oclAcceleration           Enable/disable OpenCL acceleration (default=0, range={0,1})" << endl;
@@ -427,6 +428,10 @@ void ParseParameters(int argc, char* argv[], Parameters& params)
 		else if (!strcmp(argv[i], "--maxsegsize")) {
 			if (++i < argc)
 				params.m_paramsVHACD.m_maxsegsize = atof(argv[i]);
+		}
+		else if (!strcmp(argv[i], "--refinebcs")) {
+			if (++i < argc)
+				params.m_paramsVHACD.m_refinebcs = atof(argv[i]);
 		}
         else if (!strcmp(argv[i], "--beta")) {
             if (++i < argc)

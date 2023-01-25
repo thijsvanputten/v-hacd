@@ -88,6 +88,7 @@ public:
 			m_minsegsize = 3.0; //minimum size of the macro element
 			m_maxaspectratio = 20.; //maximum aspect ratio of a macro element
 			m_maxsegsize = 100000; //maximum size of a macro element
+			m_refinebcs = 20; //maximum size of a macro element
             m_maxNumVerticesPerCH = 64;
             m_minVolumePerCH = 0.0001;
             m_callback = 0;
@@ -105,6 +106,7 @@ public:
 		double m_minsegsize;
 		double m_maxaspectratio;
 		double m_maxsegsize;
+		double m_refinebcs;
         double m_minVolumePerCH;
         IUserCallback* m_callback;
         IUserLogger* m_logger;

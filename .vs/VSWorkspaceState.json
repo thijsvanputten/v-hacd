@@ -9,6 +9,6 @@
     "\\src\\VHACD_Lib\\public",
     "\\src\\VHACD_Lib\\src"
   ],
-  "SelectedNode": "\\src\\VHACD_Lib\\src\\vhacdVolume.cpp",
+  "SelectedNode": "\\src\\CMakeLists.txt",
   "PreviewInSolutionExplorer": false
 }

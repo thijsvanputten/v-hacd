@@ -56,9 +56,11 @@ public:
     virtual PrimitiveSet* Create() const = 0;
     virtual const size_t GetNPrimitives() const = 0;
     virtual const size_t GetNPrimitivesOnSurf() const = 0;
+	virtual const size_t GetNPrimitivesOnBcs() const = 0;
     virtual const size_t GetNPrimitivesInsideSurf() const = 0;
     virtual const double GetEigenValue(AXIS axis) const = 0;
     virtual const double ComputeMaxVolumeError() const = 0;
+	virtual const double ComputeBcsVolume() const = 0;
     virtual const double ComputeVolume() const = 0;
 	virtual const double ComputeMinBBSize() const = 0;
 	virtual const double ComputeMaxBBSize() const = 0;
@@ -98,10 +100,12 @@ public:
     const size_t GetNPrimitives() const { return m_voxels.Size(); }
     const size_t GetNPrimitivesOnSurf() const { return m_numVoxelsOnSurface; }
     const size_t GetNPrimitivesInsideSurf() const { return m_numVoxelsInsideSurface; }
+	const size_t GetNPrimitivesOnBcs() const { return m_numVoxelsOnBcs; }
     const double GetEigenValue(AXIS axis) const { return m_D[axis][axis]; }
     const double ComputeVolume() const { return m_unitVolume * m_voxels.Size(); }
 	const double ComputeScale() const { return m_scale; }
     const double ComputeMaxVolumeError() const { return m_unitVolume * m_numVoxelsOnSurface; }
+	const double ComputeBcsVolume() const { return m_unitVolume * m_numVoxelsOnBcs; }
 	const double ComputeMinBBSize() const {
 		const Vec3<short> m_diffBB = m_maxBBVoxels - m_minBBVoxels;
 		short min_s = m_diffBB.X();
@@ -163,14 +167,18 @@ public:
     void AlignToPrincipalAxes(){};
     void RevertAlignToPrincipalAxes(){};
     Voxel* const GetVoxels() { return m_voxels.Data(); }
+	Voxel* const GetVoxelsBcs() { return m_voxels_bcs.Data(); } //FLAVIEN
     const Voxel* const GetVoxels() const { return m_voxels.Data(); }
+	const Voxel* const GetVoxelsBcs() const { return m_voxels_bcs.Data(); }//FLAVIEN
 
 private:
     size_t m_numVoxelsOnSurface;
     size_t m_numVoxelsInsideSurface;
+	size_t m_numVoxelsOnBcs; //FLAVIEN
     Vec3<double> m_minBB;
     double m_scale;
     SArray<Voxel, 8> m_voxels;
+	SArray<Voxel, 8> m_voxels_bcs;//FLAVIEN
     double m_unitVolume;
     Vec3<double> m_minBBPts;
     Vec3<double> m_maxBBPts;
@@ -200,6 +208,7 @@ public:
 
     const size_t GetNPrimitives() const { return m_tetrahedra.Size(); }
     const size_t GetNPrimitivesOnSurf() const { return m_numTetrahedraOnSurface; }
+	const size_t GetNPrimitivesOnBcs() const { return 0; }
     const size_t GetNPrimitivesInsideSurf() const { return m_numTetrahedraInsideSurface; }
     const Vec3<double>& GetMinBB() const { return m_minBB; }
     const Vec3<double>& GetMaxBB() const { return m_maxBB; }
@@ -211,6 +220,7 @@ public:
     const double ComputeVolume() const;
 	const double ComputeScale() const { return 0; }
     const double ComputeMaxVolumeError() const;
+	const double ComputeBcsVolume() const { return 0; }
     void ComputeConvexHull(Mesh& meshCH, const size_t sampling = 1) const;
     void ComputePrincipalAxes();
     void AlignToPrincipalAxes();
@@ -289,6 +299,7 @@ public:
 		return m_data_bcs[i + j * m_dim[0] + k * m_dim[0] * m_dim[1]];
 	}
     const size_t GetNPrimitivesOnSurf() const { return m_numVoxelsOnSurface; }
+	const size_t GetNPrimitivesOnBcs() const { return m_numVoxelsOnBcs; }
     const size_t GetNPrimitivesInsideSurf() const { return m_numVoxelsInsideSurface; }
     void Convert(Mesh& mesh, const VOXEL_VALUE value) const;
     void Convert(VoxelSet& vset) const;
@@ -313,7 +324,7 @@ private:
     size_t m_numVoxelsOnSurface;
     size_t m_numVoxelsInsideSurface;
     size_t m_numVoxelsOutsideSurface;
-	size_t m_numVoxelsBcs;
+	size_t m_numVoxelsOnBcs;
     unsigned char* m_data;
 	unsigned char* m_data_bcs;
 };
@@ -398,6 +409,7 @@ void Volume::Voxelize(const T* const points, const uint32_t stridePoints, const 
     m_numVoxelsOnSurface = 0;
     m_numVoxelsInsideSurface = 0;
     m_numVoxelsOutsideSurface = 0;
+	m_numVoxelsOnBcs = 0;
 
     Vec3<double> p[3];
     size_t i, j, k;
@@ -467,7 +479,7 @@ void Volume::Voxelize(const T* const points, const uint32_t stridePoints, const 
 					unsigned char& valuebcs = GetVoxelBcs(i, j, k); //MODIF FLAVIEN
 					if (res == 1 && valuebcs == PRIMITIVE_UNDEFINED && trianglesBcs[t] == 1) {
 						valuebcs = PRIMITIVE_ON_BCS;
-						++m_numVoxelsBcs;
+						++m_numVoxelsOnBcs;
 					}
                 }
             }

@@ -376,6 +376,7 @@ VoxelSet::VoxelSet()
     m_scale = 1.0;
     m_unitVolume = 1.0;
     m_numVoxelsOnSurface = 0;
+	m_numVoxelsOnBcs = 0;
     m_numVoxelsInsideSurface = 0;
     memset(m_Q, 0, sizeof(double) * 9);
     memset(m_D, 0, sizeof(double) * 9);
@@ -650,16 +651,24 @@ void VoxelSet::SelectOnSurface(PrimitiveSet* const onSurfP) const
         onSurf->m_minBB[h] = m_minBB[h];
     }
     onSurf->m_voxels.Resize(0);
+	onSurf->m_voxels_bcs.Resize(0);//FLAVIEN
     onSurf->m_scale = m_scale;
     onSurf->m_unitVolume = m_unitVolume;
     onSurf->m_numVoxelsOnSurface = 0;
+	onSurf->m_numVoxelsOnBcs = 0; //FLAVIEN
     onSurf->m_numVoxelsInsideSurface = 0;
     Voxel voxel;
+	Voxel voxel_bcs;
     for (size_t v = 0; v < nVoxels; ++v) {
         voxel = m_voxels[v];
+		voxel_bcs = m_voxels_bcs[v];
         if (voxel.m_data == PRIMITIVE_ON_SURFACE) {
             onSurf->m_voxels.PushBack(voxel);
             ++onSurf->m_numVoxelsOnSurface;
+			if (voxel_bcs.m_data == PRIMITIVE_ON_BCS) {
+				onSurf->m_voxels_bcs.PushBack(voxel_bcs);
+				++onSurf->m_numVoxelsOnBcs;
+			}
         }
     }
 }
@@ -680,17 +689,24 @@ void VoxelSet::Clip(const Plane& plane,
     negativePart->m_voxels.Resize(0);
     positivePart->m_voxels.Allocate(nVoxels);
     negativePart->m_voxels.Allocate(nVoxels);
-    negativePart->m_scale = positivePart->m_scale = m_scale;
+	positivePart->m_voxels_bcs.Resize(0); //FLAVIEN
+	negativePart->m_voxels_bcs.Resize(0); //FLAVIEN
+	positivePart->m_voxels_bcs.Allocate(nVoxels); //FLAVIEN
+	negativePart->m_voxels_bcs.Allocate(nVoxels); //FLAVIEN
+	negativePart->m_scale = positivePart->m_scale = m_scale;
     negativePart->m_unitVolume = positivePart->m_unitVolume = m_unitVolume;
     negativePart->m_numVoxelsOnSurface = positivePart->m_numVoxelsOnSurface = 0;
     negativePart->m_numVoxelsInsideSurface = positivePart->m_numVoxelsInsideSurface = 0;
+	negativePart->m_numVoxelsOnBcs = positivePart->m_numVoxelsOnBcs = 0;//FLAVIEN
 
     double d;
     Vec3<double> pt;
     Voxel voxel;
+	Voxel voxel_bcs;//FLAVIEN
     const double d0 = m_scale;
     for (size_t v = 0; v < nVoxels; ++v) {
         voxel = m_voxels[v];
+		voxel_bcs = m_voxels_bcs[v];//FLAVIEN
         pt = GetPoint(voxel);
         d = plane.m_a * pt[0] + plane.m_b * pt[1] + plane.m_c * pt[2] + plane.m_d;
         if (d >= 0.0) {
@@ -698,10 +714,23 @@ void VoxelSet::Clip(const Plane& plane,
                 voxel.m_data = PRIMITIVE_ON_SURFACE;
                 positivePart->m_voxels.PushBack(voxel);
                 ++positivePart->m_numVoxelsOnSurface;
+				//FLAVIEN-------------
+				if (voxel_bcs.m_data == PRIMITIVE_ON_BCS) {
+					voxel_bcs.m_data = PRIMITIVE_ON_BCS;
+					positivePart->m_voxels_bcs.PushBack(voxel_bcs);
+					++positivePart->m_numVoxelsOnBcs;
+				}
+				else {
+					voxel_bcs.m_data = PRIMITIVE_UNDEFINED;
+					positivePart->m_voxels_bcs.PushBack(voxel_bcs);
+				}
+				//------------------------
             }
             else {
                 positivePart->m_voxels.PushBack(voxel);
                 ++positivePart->m_numVoxelsInsideSurface;
+				voxel_bcs.m_data = PRIMITIVE_UNDEFINED;//FLAVIEN
+				positivePart->m_voxels_bcs.PushBack(voxel_bcs);//FLAVIEN
             }
         }
         else {
@@ -709,10 +738,23 @@ void VoxelSet::Clip(const Plane& plane,
                 voxel.m_data = PRIMITIVE_ON_SURFACE;
                 negativePart->m_voxels.PushBack(voxel);
                 ++negativePart->m_numVoxelsOnSurface;
+				//FLAVIEN-----------
+				if (voxel_bcs.m_data == PRIMITIVE_ON_BCS) {
+					voxel_bcs.m_data = PRIMITIVE_ON_BCS;
+					negativePart->m_voxels_bcs.PushBack(voxel_bcs);
+					++negativePart->m_numVoxelsOnBcs;
+				}
+				else {
+					voxel_bcs.m_data = PRIMITIVE_UNDEFINED;
+					negativePart->m_voxels_bcs.PushBack(voxel_bcs);
+				}
+				//-----------------------
             }
             else {
                 negativePart->m_voxels.PushBack(voxel);
                 ++negativePart->m_numVoxelsInsideSurface;
+				voxel_bcs.m_data = PRIMITIVE_UNDEFINED;//FLAVIEN
+				negativePart->m_voxels_bcs.PushBack(voxel_bcs);//FLAVIEN
             }
         }
     }
@@ -796,7 +838,7 @@ Volume::Volume()
     m_numVoxelsOnSurface = 0;
     m_numVoxelsInsideSurface = 0;
     m_numVoxelsOutsideSurface = 0;
-	m_numVoxelsBcs = 0;
+	m_numVoxelsOnBcs = 0;
     m_scale = 1.0;
     m_data = 0;
 	m_data_bcs = 0;
@@ -804,7 +846,7 @@ Volume::Volume()
 Volume::~Volume(void)
 {
     delete[] m_data;
-	//delete[] m_data_bcs;
+	delete[] m_data_bcs;
 }
 void Volume::Allocate()
 {
@@ -1032,14 +1074,17 @@ void Volume::Convert(VoxelSet& vset) const
         vset.m_minBB[h] = m_minBB[h];
     }
     vset.m_voxels.Allocate(m_numVoxelsInsideSurface + m_numVoxelsOnSurface);
+	vset.m_voxels_bcs.Allocate(m_numVoxelsInsideSurface + m_numVoxelsOnSurface); //FLAVIEN
     vset.m_scale = m_scale;
     vset.m_unitVolume = m_scale * m_scale * m_scale;
     const short i0 = (short)m_dim[0];
     const short j0 = (short)m_dim[1];
     const short k0 = (short)m_dim[2];
     Voxel voxel;
+	Voxel voxel_bcs;//FLAVIEN
     vset.m_numVoxelsOnSurface = 0;
     vset.m_numVoxelsInsideSurface = 0;
+	vset.m_numVoxelsOnBcs = 0;
     for (short i = 0; i < i0; ++i) {
         for (short j = 0; j < j0; ++j) {
             for (short k = 0; k < k0; ++k) {
@@ -1051,14 +1096,34 @@ void Volume::Convert(VoxelSet& vset) const
                     voxel.m_data = PRIMITIVE_INSIDE_SURFACE;
                     vset.m_voxels.PushBack(voxel);
                     ++vset.m_numVoxelsInsideSurface;
+					voxel_bcs.m_coord[0] = i; //FLAVIEN
+					voxel_bcs.m_coord[1] = j;
+					voxel_bcs.m_coord[2] = k;
+					voxel_bcs.m_data = PRIMITIVE_UNDEFINED;
+					vset.m_voxels_bcs.PushBack(voxel_bcs);
                 }
                 else if (value == PRIMITIVE_ON_SURFACE) {
                     voxel.m_coord[0] = i;
                     voxel.m_coord[1] = j;
                     voxel.m_coord[2] = k;
                     voxel.m_data = PRIMITIVE_ON_SURFACE;
+					const unsigned char& valueBcs = GetVoxelBcs(i, j, k);
+					if (valueBcs == PRIMITIVE_ON_BCS) {
+						voxel_bcs.m_coord[0] = i;
+						voxel_bcs.m_coord[1] = j;
+						voxel_bcs.m_coord[2] = k;
+						voxel_bcs.m_data = PRIMITIVE_ON_BCS;
+						++vset.m_numVoxelsOnBcs;
+					}
+					else {
+						voxel_bcs.m_coord[0] = i;
+						voxel_bcs.m_coord[1] = j;
+						voxel_bcs.m_coord[2] = k;
+						voxel_bcs.m_data = PRIMITIVE_UNDEFINED;
+					}
                     vset.m_voxels.PushBack(voxel);
                     ++vset.m_numVoxelsOnSurface;
+					vset.m_voxels_bcs.PushBack(voxel_bcs); //FLAVIEN
                 }
             }
         }
