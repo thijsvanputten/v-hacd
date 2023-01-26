@@ -158,7 +158,8 @@ int main(int argc, char* argv[])
                 msg);
             if (!res) {
                 myLogger.Log(msg.str().c_str());
-                return -1;
+                myLogger.Log("Turning off OCL acceleration.");
+                params.m_paramsVHACD.m_oclAcceleration = false;
             }
         }
 #else //CL_VERSION_1_1
