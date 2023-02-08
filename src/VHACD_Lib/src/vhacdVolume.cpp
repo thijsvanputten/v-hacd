@@ -1011,10 +1011,10 @@ void Volume::ExportVoxel(const std::string& binvox_output) const
 					const unsigned char& value = GetVoxel(0, 0, 0);
 					const unsigned char& valueBcs = GetVoxelBcs(0, 0, 0);
 					if (value == PRIMITIVE_INSIDE_SURFACE) {
-						currentvalue = false; //true
+						currentvalue = true; //false for interface only
 					}
 					else if (value == PRIMITIVE_ON_SURFACE) {
-						currentvalue = false; //true
+						currentvalue = true; //false for interface only
 					}
 					else if (value == PRIMITIVE_OUTSIDE_SURFACE) {
 						currentvalue = false;
@@ -1034,13 +1034,13 @@ void Volume::ExportVoxel(const std::string& binvox_output) const
 				const unsigned char& value = GetVoxel(i, j, k);
 				const unsigned char& valueBcs = GetVoxelBcs(i, j, k);
 				if (value == PRIMITIVE_INSIDE_SURFACE) {
-					nextvalue = false; //true
+					nextvalue = true; //false for interface only
 				}
 				else if (value == PRIMITIVE_ON_SURFACE) {
-					nextvalue = false; //true
+					nextvalue = true; //false for interface only
 				}
 				else if (value == PRIMITIVE_OUTSIDE_SURFACE) {
-					nextvalue = false; //false
+					nextvalue = false;
 				}
 				else {
 					nextvalue = false;

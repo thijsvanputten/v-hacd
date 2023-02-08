@@ -1102,20 +1102,24 @@ void VHACD::ComputeACD(const Parameters& params)
                 params.m_logger->Log(msg.str().c_str());
             }
 			//force splitting
+			//bool to_split = false;
 			double target_concavity = params.m_concavity;
 			if (min_bb_size > 0.00001 && max_bb_size > m_maxsize)
 			{
 				concavity = target_concavity + 1.0;
+				//to_split = true;
 			}
 			//|| (min_bb_size > 0.00001&& max_bb_size > m_maxsize
 			//FLAVIEN force also where BCS are located
+			
 			if (bcsvolume > 0. && min_bb_size > 0.00001 && max_bb_size > m_maxsize / params.m_refinebcs && ar <= params.m_maxaspectratio)
 			{
 				//double tes = 0.;
 				concavity = target_concavity + 1.0;
+				//to_split = true;
 			}
-
-			if ((concavity > target_concavity && concavity > error && min_bb_size > m_minsize) || (min_bb_size > 0.00001 && ar > params.m_maxaspectratio) ) {
+			// || to_split==true) {
+			if ((concavity > target_concavity && concavity > error && min_bb_size > m_minsize) || (min_bb_size > 0.00001 && ar > params.m_maxaspectratio)) {
                 Vec3<double> preferredCuttingDirection;
                 double w = ComputePreferredCuttingDirection(pset, preferredCuttingDirection);
                 planes.Resize(0);
@@ -1190,11 +1194,27 @@ void VHACD::ComputeACD(const Parameters& params)
                   treeIndex = *(firstParentItr + p / 2) * 2 + p % 2;
                 }
                 m_treeIndices.push_back(treeIndex);
-				
+
+				//transform back the plane equation to align
+
+
+				//normal_trans
+				double n_x = m_rot[0][0] * bestPlane.m_a + m_rot[0][1] * bestPlane.m_b + m_rot[0][2] * bestPlane.m_c;
+				double n_y = m_rot[1][0] * bestPlane.m_a + m_rot[1][1] * bestPlane.m_b + m_rot[1][2] * bestPlane.m_c;
+				double n_z = m_rot[2][0] * bestPlane.m_a + m_rot[2][1] * bestPlane.m_b + m_rot[2][2] * bestPlane.m_c;
+				//origin_trans origin_trans = m_rot @ origin + barycenter
+				double o_x = - (m_rot[0][0] * bestPlane.m_a + m_rot[0][1] * bestPlane.m_b + m_rot[0][2] * bestPlane.m_c) * bestPlane.m_d + m_barycenter[0];
+				double o_y = - (m_rot[1][0] * bestPlane.m_a + m_rot[1][1] * bestPlane.m_b + m_rot[1][2] * bestPlane.m_c) * bestPlane.m_d + m_barycenter[1];
+				double o_z = - (m_rot[2][0] * bestPlane.m_a + m_rot[2][1] * bestPlane.m_b + m_rot[2][2] * bestPlane.m_c) * bestPlane.m_d + m_barycenter[2];
+				// d_trans = -dot(normal_trans, origin_trans)
+				double d_trans = - (n_x * o_x + n_y * o_y + n_z * o_z);
+
+
 				// Store the planes to a vector file
 				std::ostringstream sp;
 				sp << depth << "," << p << "," << treeIndex << ",";
-				sp << bestPlane.m_a << "," << bestPlane.m_b << "," << bestPlane.m_c << "," << bestPlane.m_d;
+				//sp << bestPlane.m_a << "," << bestPlane.m_b << "," << bestPlane.m_c << "," << bestPlane.m_d;
+				sp << n_x << "," << n_y << "," << n_z << "," << d_trans;
 				m_splitPlanes.push_back(sp.str());
 
                 if (GetCancel()) {
