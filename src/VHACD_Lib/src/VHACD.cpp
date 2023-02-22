@@ -1102,12 +1102,12 @@ void VHACD::ComputeACD(const Parameters& params)
                 params.m_logger->Log(msg.str().c_str());
             }
 			//force splitting
-			//bool to_split = false;
+			bool to_split = false;
 			double target_concavity = params.m_concavity;
 			if (min_bb_size > 0.00001 && max_bb_size > m_maxsize)
 			{
-				concavity = target_concavity + 1.0;
-				//to_split = true;
+				//concavity = target_concavity + 1.0;
+				to_split = true;
 			}
 			//|| (min_bb_size > 0.00001&& max_bb_size > m_maxsize
 			//FLAVIEN force also where BCS are located
@@ -1115,11 +1115,11 @@ void VHACD::ComputeACD(const Parameters& params)
 			if (bcsvolume > 0. && min_bb_size > 0.00001 && max_bb_size > m_maxsize / params.m_refinebcs && ar <= params.m_maxaspectratio)
 			{
 				//double tes = 0.;
-				concavity = target_concavity + 1.0;
-				//to_split = true;
+				//concavity = target_concavity + 1.0;
+				to_split = true;
 			}
 			// || to_split==true) {
-			if ((concavity > target_concavity && concavity > error && min_bb_size > m_minsize) || (min_bb_size > 0.00001 && ar > params.m_maxaspectratio)) {
+			if ((concavity > target_concavity && concavity > error && min_bb_size > m_minsize) || (min_bb_size > 0.00001 && ar > params.m_maxaspectratio) || to_split == true) {
                 Vec3<double> preferredCuttingDirection;
                 double w = ComputePreferredCuttingDirection(pset, preferredCuttingDirection);
                 planes.Resize(0);
