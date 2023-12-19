@@ -65,3 +65,14 @@ The in-repo included 2.7x version of the tool will not function for Blender 2.8+
 ![V-HACD Results (3/4)](https://raw.githubusercontent.com/kmammou/v-hacd/master/doc/snapshots_3.png)
 ![V-HACD Results (4/4)](https://raw.githubusercontent.com/kmammou/v-hacd/master/doc/snapshots_4.png)
 
+
+# Additional comments to build vhacd on Linux and link it to star
+In file src/CMakeLists.txt
+add this line 
+set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "project install prefix" FORCE)
+comment this line (not working with NO_OPENMP flag)
+#add_subdirectory ("${CMAKE_SOURCE_DIR}/test")
+
+In file src/VHACD_Lib/CMakeLists.txt
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
+
