@@ -15,6 +15,7 @@
 
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
+#include <iostream>
 #endif
 
 #include <algorithm>
@@ -988,6 +989,8 @@ void VHACD::ComputeACD(const Parameters& params)
     }
     m_timer.Tic();
 
+    std::cout << "Start VHACD Convex Decomposition" << std::endl;
+
     m_stage = "Approximate Convex Decomposition";
     m_stageProgress = 0.0;
     std::ostringstream msg;
@@ -1033,6 +1036,7 @@ void VHACD::ComputeACD(const Parameters& params)
     while (sub++ < depth && inputParts.Size() > 0 && !m_cancel) {
         msg.str("");
         msg << "Subdivision level " << sub;
+        std::cout << "Subdivision level " << sub << std::endl;
         m_operation = msg.str();
 
         if (params.m_logger) {
@@ -1080,6 +1084,8 @@ void VHACD::ComputeACD(const Parameters& params)
 			
 			const double min_bb_size = pset->ComputeMinBBSize();
 			const double max_bb_size = pset->ComputeMaxBBSize();
+            const double diag_bb_size = pset->ComputeDiagBBSize();
+            std::cout << "diag bb " << diag_bb_size << std::endl;
 			double ar = max_bb_size / min_bb_size;
 
             if (firstIteration) {
@@ -1088,6 +1094,7 @@ void VHACD::ComputeACD(const Parameters& params)
 			double m_minsize = pset->ComputeScale() * params.m_minsegsize;
 			double m_maxsize = pset->ComputeScale() * params.m_maxsegsize;
 
+            
             if (params.m_logger) {
                 msg.str("");
                 msg << "\t -> Part[" << p
@@ -1104,7 +1111,7 @@ void VHACD::ComputeACD(const Parameters& params)
 			//force splitting
 			bool to_split = false;
 			double target_concavity = params.m_concavity;
-			if (min_bb_size > 0.00001 && max_bb_size > m_maxsize)
+			if (min_bb_size > 1e-10 && max_bb_size > m_maxsize)
 			{
 				//concavity = target_concavity + 1.0;
 				to_split = true;
@@ -1112,12 +1119,28 @@ void VHACD::ComputeACD(const Parameters& params)
 			//|| (min_bb_size > 0.00001&& max_bb_size > m_maxsize
 			//FLAVIEN force also where BCS are located
 			
-			if (bcsvolume > 0. && min_bb_size > 0.00001 && max_bb_size > m_maxsize / params.m_refinebcs && ar <= params.m_maxaspectratio)
+			if (bcsvolume > 0. && min_bb_size > 1e-10 && max_bb_size > m_maxsize / params.m_refinebcs && ar <= params.m_maxaspectratio)
 			{
 				//double tes = 0.;
 				//concavity = target_concavity + 1.0;
 				to_split = true;
 			}
+
+            std::cout <<"";
+            std::cout << "\t -> Part[" << p
+                    << "] C  = " << concavity
+                    << ", TC = " << target_concavity
+                    << ", E  = " << error
+					<< ", minBBS= " << min_bb_size
+                    << ", maxBBS= " << max_bb_size
+                    << ", m_minsize= " << m_minsize
+                    << ", m_maxsize= " << m_maxsize
+					<< ", BCSR= " << bcsvolume
+                    << ", VS = " << pset->GetNPrimitivesOnSurf()
+					<< ", VBC= " << pset->GetNPrimitivesOnBcs()
+                    << ", VI = " << pset->GetNPrimitivesInsideSurf()
+                    << std::endl;
+
 			// || to_split==true) {
 			if ((concavity > target_concavity && concavity > error && min_bb_size > m_minsize) || (min_bb_size > 0.00001 && ar > params.m_maxaspectratio) || to_split == true) {
                 Vec3<double> preferredCuttingDirection;
@@ -1215,7 +1238,11 @@ void VHACD::ComputeACD(const Parameters& params)
 				sp << depth << "," << p << "," << treeIndex << ",";
 				//sp << bestPlane.m_a << "," << bestPlane.m_b << "," << bestPlane.m_c << "," << bestPlane.m_d;
 				sp << n_x << "," << n_y << "," << n_z << "," << d_trans;
-				m_splitPlanes.push_back(sp.str());
+				//std::cout << "write split plane" << sp.str() << std::endl;
+                m_splitPlanes.push_back(sp.str());
+                m_splitPlanes_indices.push_back(treeIndex);
+                m_splitPlanes_origins.push_back({o_x, o_y, o_z});
+                m_splitPlanes_normals.push_back({n_x, n_y, n_z});
 
                 if (GetCancel()) {
                     delete pset; // clean up

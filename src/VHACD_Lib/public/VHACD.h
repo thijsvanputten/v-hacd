@@ -140,6 +140,7 @@ public:
         = 0;
     virtual uint32_t GetNConvexHulls() const = 0;
 	virtual void GetSplitPlanes(std::vector<std::string>& sp) const =0;
+    virtual void GetSplitPlanesIndexOrigNormals(std::vector<int>& indices, std::vector<std::vector< double>>& normals, std::vector<std::vector< double>>& origins) const =0;
     virtual void GetConvexHull(const uint32_t index, ConvexHull& ch) const = 0;
     virtual void Clean(void) = 0; // release internally allocated memory
     virtual void Release(void) = 0; // release IVHACD

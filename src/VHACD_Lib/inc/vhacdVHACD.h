@@ -83,6 +83,12 @@ public:
 	{
 		sp= m_splitPlanes;
 	}
+    void GetSplitPlanesIndexOrigNormals(std::vector<int>& indices, std::vector<std::vector< double>>& normals, std::vector<std::vector< double>>& origins) const
+	{
+        indices= m_splitPlanes_indices;
+        normals= m_splitPlanes_normals;
+        origins= m_splitPlanes_origins;
+	}
     void Clean(void)
     {
         if (mRaycastMesh)
@@ -379,6 +385,10 @@ private:
  
     std::vector<int> m_treeIndices;
 	std::vector<std::string> m_splitPlanes;
+    std::vector<int> m_splitPlanes_indices;
+    std::vector<std::vector< double> > m_splitPlanes_normals;
+    std::vector<std::vector< double> > m_splitPlanes_origins;
+    
 };
 }
 #endif // VHACD_VHACD_H

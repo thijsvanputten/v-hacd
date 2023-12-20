@@ -137,6 +137,11 @@ public:
 	virtual void GetSplitPlanes(std::vector<std::string>& sp) const final
 	{
 	}
+	
+	virtual void GetSplitPlanesIndexOrigNormals(std::vector<int>& indices, std::vector<std::vector< double>>& normals, std::vector<std::vector< double>>& origins) const final
+	{
+	}
+    
 
 	void	releaseHACD(void) // release memory associated with the last HACD request
 	{

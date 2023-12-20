@@ -64,6 +64,7 @@ public:
     virtual const double ComputeVolume() const = 0;
 	virtual const double ComputeMinBBSize() const = 0;
 	virtual const double ComputeMaxBBSize() const = 0;
+    virtual const double ComputeDiagBBSize() const = 0;
 	virtual const double ComputeScale() const = 0;
     virtual void Clip(const Plane& plane, PrimitiveSet* const positivePart,
         PrimitiveSet* const negativePart) const = 0;
@@ -123,6 +124,12 @@ public:
 
 		return max_s * pow(m_unitVolume, 1.0 / 3) * m_scale;
 
+	}
+    const double ComputeDiagBBSize() const {
+        Vec3<double> minpt = GetPoint(m_minBBVoxels);
+        Vec3<double> maxpt = GetPoint(m_maxBBVoxels);
+        Vec3<double> diag = maxpt - minpt;
+        return diag.GetNorm();
 	}
     const Vec3<short>& GetMinBBVoxels() const { return m_minBBVoxels; }
     const Vec3<short>& GetMaxBBVoxels() const { return m_maxBBVoxels; }
@@ -215,6 +222,7 @@ public:
     const Vec3<double>& GetBarycenter() const { return m_barycenter; }
 	const double ComputeMinBBSize() const {	return 0; }
 	const double ComputeMaxBBSize() const { return 0; }
+    const double ComputeDiagBBSize() const { return 0; }
     const double GetEigenValue(AXIS axis) const { return m_D[axis][axis]; }
     const double GetSacle() const { return m_scale; }
     const double ComputeVolume() const;
