@@ -343,8 +343,8 @@ private:
         VoxelizeMesh(points, 3, nPoints, (int32_t *)triangles, 3, nTriangles, (int32_t*)trianglesBcs, params);
         ComputePrimitiveSet(params);
         ComputeACD(params);
-        MergeConvexHulls(params);
-        SimplifyConvexHulls(params);
+        //MergeConvexHulls(params);
+        //SimplifyConvexHulls(params);
         if (params.m_oclAcceleration) {
             // Release kernels
         }

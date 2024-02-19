@@ -1085,7 +1085,7 @@ void VHACD::ComputeACD(const Parameters& params)
 			const double min_bb_size = pset->ComputeMinBBSize();
 			const double max_bb_size = pset->ComputeMaxBBSize();
             const double diag_bb_size = pset->ComputeDiagBBSize();
-            std::cout << "diag bb " << diag_bb_size << std::endl;
+            //std::cout << "diag bb " << diag_bb_size << std::endl;
 			double ar = max_bb_size / min_bb_size;
 
             if (firstIteration) {
@@ -1125,7 +1125,7 @@ void VHACD::ComputeACD(const Parameters& params)
 				//concavity = target_concavity + 1.0;
 				to_split = true;
 			}
-
+            /*
             std::cout <<"";
             std::cout << "\t -> Part[" << p
                     << "] C  = " << concavity
@@ -1140,6 +1140,8 @@ void VHACD::ComputeACD(const Parameters& params)
 					<< ", VBC= " << pset->GetNPrimitivesOnBcs()
                     << ", VI = " << pset->GetNPrimitivesInsideSurf()
                     << std::endl;
+
+            */
 
 			// || to_split==true) {
 			if ((concavity > target_concavity && concavity > error && min_bb_size > m_minsize) || (min_bb_size > 0.00001 && ar > params.m_maxaspectratio) || to_split == true) {
