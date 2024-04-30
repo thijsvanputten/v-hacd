@@ -50,6 +50,24 @@
 #ifndef VHACD_MUTEX_H
 #define VHACD_MUTEX_H
 
+// Check if we need a 'true' Mutex
+#if defined CL_VERSION_1_1 || defined _OPENMP
+#define NEED_MUTEX
+#endif
+
+#ifndef NEED_MUTEX // Empty Mutex
+namespace VHACD {
+class Mutex {
+public:
+  Mutex(void) {}
+  ~Mutex(void) {}
+  void Lock(void) {}
+  bool TryLock(void) { return true; }
+  void Unlock(void) {}
+};
+}
+#else // Orignal/default Mutex
+
 #if defined(WIN32)
 
 #ifndef _WIN32_WINNT
@@ -145,4 +163,7 @@ private:
 #endif
 };
 }
+
+#endif // Default Mutex
+
 #endif // VHACD_MUTEX_H
