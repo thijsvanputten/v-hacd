@@ -16,6 +16,7 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
+#include <ostream>
 #endif
 
 #include <algorithm>
@@ -415,6 +416,9 @@ void VHACD::ComputePrimitiveSet(const Parameters& params)
 		//m_volume->ExportVoxel(params.m_fileNameBvx); //Flavien modif to export the voxel
         m_volume->Convert(*vset);
         m_pset = vset;
+
+        std::cout << vset->GetNPrimitives() << " voxels" << std::endl;
+        
     }
     else {
         TetrahedronSet* tset = new TetrahedronSet;
@@ -524,6 +528,56 @@ void ComputeAxesAlignedClippingPlanes(const VoxelSet& vset, const short downsamp
         plane.m_d = -pt[2];
         plane.m_index = k;
         planes.PushBack(plane);
+    }
+}
+void ComputeForceSplitClippingPlanes(const VoxelSet& vset, Plane& plane)
+{
+    const Vec3<short> minV = vset.GetMinBBVoxels();
+    const Vec3<short> maxV = vset.GetMaxBBVoxels();
+
+    const Vec3<short> diffV = maxV - minV;
+
+    short arr[3] = {diffV.X(), diffV.Y(), diffV.Z()}; // Convert Vec3 to an array
+
+    auto maxIt = std::max_element(arr, arr + 3);
+    size_t maxIndex = std::distance(arr, maxIt);
+    Vec3<double> pt;
+
+    if(maxIndex == 0)
+    {
+        plane.m_a = 1.0;
+        plane.m_b = 0.0;
+        plane.m_c = 0.0;
+        plane.m_axis = AXIS_X;
+        short i = minV[0] + (maxV[0] - minV[0])/2;
+
+        pt = vset.GetPoint(Vec3<double>(i + 0.5, 0.0, 0.0));
+        plane.m_d = -pt[0];
+        plane.m_index = i;
+    }
+    else if (maxIndex == 1)
+    {
+        plane.m_a = 0.0;
+        plane.m_b = 1.0;
+        plane.m_c = 0.0;
+        plane.m_axis = AXIS_Y;
+        short j = minV[1] + (maxV[1] - minV[1])/2;
+
+        pt = vset.GetPoint(Vec3<double>(0.0, j + 0.5, 0.0));
+        plane.m_d = -pt[1];
+        plane.m_index = j;
+    }
+    else if (maxIndex == 2)
+    {
+        plane.m_a = 0.0;
+        plane.m_b = 0.0;
+        plane.m_c = 1.0;
+        plane.m_axis = AXIS_Z;
+        short k = minV[2] + (maxV[2] - minV[2])/2;
+
+        pt = vset.GetPoint(Vec3<double>(0.0, 0.0, k + 0.5));
+        plane.m_d = -pt[2];
+        plane.m_index = k;
     }
 }
 void ComputeAxesAlignedClippingPlanes(const TetrahedronSet& tset, const short downsampling, SArray<Plane>& planes)
@@ -1108,23 +1162,26 @@ void VHACD::ComputeACD(const Parameters& params)
                     << std::endl;
                 params.m_logger->Log(msg.str().c_str());
             }
+
 			//force splitting
-			bool to_split = false;
+            bool to_split_maxSize = false;
+			bool to_split_bcs = false;
+            bool to_split_concavity = false;
 			double target_concavity = params.m_concavity;
-			if (min_bb_size > 1e-10 && max_bb_size > m_maxsize)
-			{
-				//concavity = target_concavity + 1.0;
-				to_split = true;
-			}
+			if (min_bb_size > 1e-10 && max_bb_size > ( m_maxsize + 0.1*m_maxsize))
+			    to_split_maxSize = true;
+
 			//|| (min_bb_size > 0.00001&& max_bb_size > m_maxsize
 			//FLAVIEN force also where BCS are located
 			
 			if (bcsvolume > 0. && min_bb_size > 1e-10 && max_bb_size > m_maxsize / params.m_refinebcs && ar <= params.m_maxaspectratio)
-			{
-				//double tes = 0.;
-				//concavity = target_concavity + 1.0;
-				to_split = true;
-			}
+			    to_split_bcs = true;
+
+            if (concavity > target_concavity && concavity > error && min_bb_size > m_minsize)
+                to_split_concavity = true;
+            
+            if(to_split_concavity && to_split_maxSize)
+                to_split_maxSize = false;
             /*
             std::cout <<"";
             std::cout << "\t -> Part[" << p
@@ -1144,13 +1201,31 @@ void VHACD::ComputeACD(const Parameters& params)
             */
 
 			// || to_split==true) {
-			if ((concavity > target_concavity && concavity > error && min_bb_size > m_minsize) || (min_bb_size > 0.00001 && ar > params.m_maxaspectratio) || to_split == true) {
+			if (to_split_concavity
+                || (min_bb_size > 0.00001 && ar > params.m_maxaspectratio) 
+                || to_split_maxSize
+                || to_split_bcs) 
+            {
                 Vec3<double> preferredCuttingDirection;
-                double w = ComputePreferredCuttingDirection(pset, preferredCuttingDirection);
+                double w = MAX_DOUBLE;
+                if(!to_split_maxSize)
+                {
+                    w = ComputePreferredCuttingDirection(pset, preferredCuttingDirection);
+                }
                 planes.Resize(0);
+                
+                Plane bestPlane; //FLAVIEN MODIF TO SIMPLIFY BEST PLANE
+                double minConcavity = MAX_DOUBLE;
+
                 if (params.m_mode == 0) {
                     VoxelSet* vset = (VoxelSet*)pset;
-                    ComputeAxesAlignedClippingPlanes(*vset, params.m_planeDownsampling, planes);
+                    if(to_split_maxSize)
+                    {
+                        ComputeForceSplitClippingPlanes(*vset,  bestPlane);
+                    }
+                    else{
+                        ComputeAxesAlignedClippingPlanes(*vset, params.m_planeDownsampling, planes);
+                    }
                 }
                 else {
                     TetrahedronSet* tset = (TetrahedronSet*)pset;
@@ -1163,52 +1238,53 @@ void VHACD::ComputeACD(const Parameters& params)
                     params.m_logger->Log(msg.str().c_str());
                 }
 
-                Plane bestPlane;
-                double minConcavity = MAX_DOUBLE;
-                ComputeBestClippingPlane(pset,
-                    volume,
-                    planes,
-                    preferredCuttingDirection,
-                    w,
-                    concavity * params.m_alpha,
-                    concavity * params.m_beta,
-                    params.m_convexhullDownsampling,
-                    progress0,
-                    progress1,
-                    bestPlane,
-                    minConcavity,
-                    params);
-                if (!m_cancel && (params.m_planeDownsampling > 1 || params.m_convexhullDownsampling > 1)) {
-                    planesRef.Resize(0);
+                 if(!to_split_maxSize)
+                    {
+                        ComputeBestClippingPlane(pset,
+                            volume,
+                            planes,
+                            preferredCuttingDirection,
+                            w,
+                            concavity * params.m_alpha,
+                            concavity * params.m_beta,
+                            params.m_convexhullDownsampling,
+                            progress0,
+                            progress1,
+                            bestPlane,
+                            minConcavity,
+                            params);
+                        if (!m_cancel && (params.m_planeDownsampling > 1 || params.m_convexhullDownsampling > 1)) {
+                            planesRef.Resize(0);
 
-                    if (params.m_mode == 0) {
-                        VoxelSet* vset = (VoxelSet*)pset;
-                        RefineAxesAlignedClippingPlanes(*vset, bestPlane, params.m_planeDownsampling, planesRef);
-                    }
-                    else {
-                        TetrahedronSet* tset = (TetrahedronSet*)pset;
-                        RefineAxesAlignedClippingPlanes(*tset, bestPlane, params.m_planeDownsampling, planesRef);
-                    }
+                            if (params.m_mode == 0) {
+                                VoxelSet* vset = (VoxelSet*)pset;
+                                RefineAxesAlignedClippingPlanes(*vset, bestPlane, params.m_planeDownsampling, planesRef);
+                            }
+                            else {
+                                TetrahedronSet* tset = (TetrahedronSet*)pset;
+                                RefineAxesAlignedClippingPlanes(*tset, bestPlane, params.m_planeDownsampling, planesRef);
+                            }
 
-                    if (params.m_logger) {
-                        msg.str("");
-                        msg << "\t\t [Refining] Number of clipping planes " << planesRef.Size() << std::endl;
-                        params.m_logger->Log(msg.str().c_str());
+                            if (params.m_logger) {
+                                msg.str("");
+                                msg << "\t\t [Refining] Number of clipping planes " << planesRef.Size() << std::endl;
+                                params.m_logger->Log(msg.str().c_str());
+                            }
+                            ComputeBestClippingPlane(pset,
+                                volume,
+                                planesRef,
+                                preferredCuttingDirection,
+                                w,
+                                concavity * params.m_alpha,
+                                concavity * params.m_beta,
+                                1, // convexhullDownsampling = 1
+                                progress1,
+                                progress2,
+                                bestPlane,
+                                minConcavity,
+                                params);
+                        }
                     }
-                    ComputeBestClippingPlane(pset,
-                        volume,
-                        planesRef,
-                        preferredCuttingDirection,
-                        w,
-                        concavity * params.m_alpha,
-                        concavity * params.m_beta,
-                        1, // convexhullDownsampling = 1
-                        progress1,
-                        progress2,
-                        bestPlane,
-                        minConcavity,
-                        params);
-                }
                 
                 // Write plane to the split planes output file
                 const int depth = sub - 1;
@@ -1240,7 +1316,12 @@ void VHACD::ComputeACD(const Parameters& params)
 				sp << depth << "," << p << "," << treeIndex << ",";
 				//sp << bestPlane.m_a << "," << bestPlane.m_b << "," << bestPlane.m_c << "," << bestPlane.m_d;
 				sp << n_x << "," << n_y << "," << n_z << "," << d_trans;
-				//std::cout << "write split plane" << sp.str() << std::endl;
+				/*std::cout << "write split plane: "
+                    << depth << "," << p << "," << treeIndex
+                    << " origin "
+                    << o_x << "," << o_y << "," << o_z
+                    << " normal "
+                    << n_x << "," << n_y << "," << n_z << std::endl;*/
                 m_splitPlanes.push_back(sp.str());
                 m_splitPlanes_indices.push_back(treeIndex);
                 m_splitPlanes_origins.push_back({o_x, o_y, o_z});
@@ -1251,7 +1332,7 @@ void VHACD::ComputeACD(const Parameters& params)
                     break;
                 }
                 else {
-                    if (maxConcavity < minConcavity) {
+                    if (maxConcavity < minConcavity && !to_split_maxSize) {
                         maxConcavity = minConcavity;
                     }
                     PrimitiveSet* bestLeft = pset->Create();
