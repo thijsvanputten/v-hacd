@@ -537,13 +537,9 @@ void ComputeForceSplitClippingPlanes(const VoxelSet& vset, Plane& plane)
 
     const Vec3<short> diffV = maxV - minV;
 
-    short arr[3] = {diffV.X(), diffV.Y(), diffV.Z()}; // Convert Vec3 to an array
-
-    auto maxIt = std::max_element(arr, arr + 3);
-    size_t maxIndex = std::distance(arr, maxIt);
     Vec3<double> pt;
 
-    if(maxIndex == 0)
+    if(diffV.X() >= diffV.Y() && diffV.X() >= diffV.Z())
     {
         plane.m_a = 1.0;
         plane.m_b = 0.0;
@@ -555,7 +551,7 @@ void ComputeForceSplitClippingPlanes(const VoxelSet& vset, Plane& plane)
         plane.m_d = -pt[0];
         plane.m_index = i;
     }
-    else if (maxIndex == 1)
+    else if (diffV.Y() >= diffV.Z())
     {
         plane.m_a = 0.0;
         plane.m_b = 1.0;
@@ -567,7 +563,7 @@ void ComputeForceSplitClippingPlanes(const VoxelSet& vset, Plane& plane)
         plane.m_d = -pt[1];
         plane.m_index = j;
     }
-    else if (maxIndex == 2)
+    else
     {
         plane.m_a = 0.0;
         plane.m_b = 0.0;
