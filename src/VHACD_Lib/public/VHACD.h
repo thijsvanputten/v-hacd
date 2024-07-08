@@ -91,8 +91,8 @@ public:
 			m_refinebcs = 20; //maximum size of a macro element
             m_maxNumVerticesPerCH = 64;
             m_minVolumePerCH = 0.0001;
-            m_callback = 0;
-            m_logger = 0;
+            m_callback = nullptr;
+            m_logger = nullptr;
             m_convexhullApproximation = true;
             m_oclAcceleration = true;
             m_maxConvexHulls = 1024;
@@ -145,9 +145,9 @@ public:
     virtual void Clean(void) = 0; // release internally allocated memory
     virtual void Release(void) = 0; // release IVHACD
     virtual bool OCLInit(void* const oclDevice,
-        IUserLogger* const logger = 0)
+        IUserLogger* const logger = nullptr)
         = 0;
-    virtual bool OCLRelease(IUserLogger* const logger = 0) = 0;
+    virtual bool OCLRelease(IUserLogger* const logger = nullptr) = 0;
 
 	// Will compute the center of mass of the convex hull decomposition results and return it
 	// in 'centerOfMass'.  Returns false if the center of mass could not be computed.
